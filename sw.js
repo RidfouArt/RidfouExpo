@@ -1,5 +1,5 @@
 // Ridfou Expo V1 — installation et affichage sans connexion.
-const CACHE='ridfou-expo-v1-2026-11-07';
+const CACHE='ridfou-expo-v1-ui-clean-2026-11-07';
 const FILES=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting()));
