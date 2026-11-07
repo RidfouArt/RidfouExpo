@@ -1,0 +1,188 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>Ridfou Expo</title>
+<meta name="theme-color" content="#101918">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ridfou Expo">
+<meta name="description" content="Préparer ses accrochages : mur, œuvres, attaches, perçage et hauteurs.">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png"><style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif}body{background:#090909;color:#f3f3f3;margin:0;padding:15px}.axg{font:14px system-ui,-apple-system,sans-serif;color:#f5f5f5;width:100%;max-width:860px;margin:0 auto;--ac:#19756b;--bd:#484848;--mut:#b6b6b6;--panel:#303030;--card:#292929}
+.axg *{box-sizing:border-box}.axg button,.axg input{font:inherit}.axg button{cursor:pointer}.axg .bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}.axg .brand{font-size:18px;font-weight:800;letter-spacing:-.5px}.axg .tag{font-size:11px;color:var(--mut)}.axg .tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;background:var(--card);border:1px solid var(--bd);padding:4px;border-radius:12px;margin-bottom:14px}.axg .tabs button{border:0;border-radius:8px;background:transparent;color:var(--mut);padding:10px 2px;font-size:12px}.axg .tabs button.sel{background:var(--panel);color:#fff;font-weight:750;box-shadow:0 1px 4px #0001}.axg .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.axg .field{display:flex;flex:1;min-width:88px;flex-direction:column;gap:4px}.axg .field label{color:var(--mut);font-weight:650;font-size:11px}.axg input{min-width:0;width:100%;background:var(--panel);color:#fff;border:1px solid var(--bd);border-radius:8px;padding:9px 8px}.axg .btn{border:1px solid var(--bd);background:var(--panel);color:#fff;font-size:12px;font-weight:650;border-radius:9px;padding:10px 12px}.axg .btn.primary{background:var(--ac);border-color:var(--ac);color:#fff}.axg .btn.active{background:#dcefe9;border-color:#96c8bb;color:#155f55}.axg .btn.danger{color:#ef817b;border-color:#b86c65}.axg .actions{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}.axg .hint{font-size:12px;line-height:1.5;color:var(--mut)}.axg .small{font-size:12px;color:var(--mut)}.axg .pill{display:inline-flex;padding:5px 8px;background:#e0f0e9;color:#155c53;border-radius:99px;font-size:11px;font-weight:700}.axg .wallbox{background:#e9e8e4;color:#233e39;border:1px solid #d9d8d2;border-radius:13px;padding:11px;margin-top:12px}.axg .wall{height:205px;width:100%;position:relative;background:linear-gradient(#fff,#f6f5f1);border:1px solid #a7aea9;overflow:hidden;touch-action:pan-y}.axg .axis{position:absolute;top:0;left:50%;height:100%;border-left:1px dashed #c5cdc7}.axg .work{position:absolute;border:3px solid #444743;box-shadow:1px 2px 4px #0002;overflow:hidden;touch-action:none;cursor:grab;background:#e9dfcc;z-index:3}.axg .work.selected{outline:3px solid #118e80;outline-offset:1px;z-index:4}.axg .work:before{content:"";position:absolute;inset:4px;background:linear-gradient(120deg,#e3d7bf 0% 38%,#234453 38% 70%,#b69a67 70%)}.axg .work.n1:before{background:linear-gradient(140deg,#ede1d0 0% 38%,#577c84 38% 73%,#b1ad9a 73%)}.axg .work.n2:before{background:linear-gradient(135deg,#d2bd99 0% 45%,#273d4a 45% 80%,#e6dbbf 80%)}.axg .work span{position:absolute;right:0;bottom:0;padding:1px 3px;font-size:9px;color:#fff;background:#1c3335c9}.axg .measure{position:absolute;pointer-events:none;z-index:2}.axg .overall-h{left:5%;right:5%;top:17px;border-top:1px solid #357e70}.axg .overall-h:before,.axg .overall-h:after{content:"";position:absolute;height:10px;top:-5px;border-left:1px solid #357e70}.axg .overall-h:before{left:0}.axg .overall-h:after{right:0}.axg .wall-label{position:absolute;left:50%;top:-10px;transform:translateX(-50%);background:#f8f8f4;border-radius:4px;padding:1px 5px;white-space:nowrap;color:#135c4f;font-weight:750;font-size:11px}.axg .overall-v{right:38px;top:13%;height:76%;border-left:1px solid #357e70}.axg .overall-v:before,.axg .overall-v:after{content:"";position:absolute;width:9px;left:-5px;border-top:1px solid #357e70}.axg .overall-v:before{top:0}.axg .overall-v:after{bottom:0}.axg .vertical-label{position:absolute;top:50%;left:0;transform:translate(-50%,-50%) rotate(-90deg);transform-origin:center;white-space:nowrap;background:#f8f8f4;border-radius:4px;color:#135c4f;font-size:11px;font-weight:750;padding:3px 5px}.axg .work-size{position:absolute;z-index:2;pointer-events:none;transform:translateX(-50%);background:#f7f7f1ee;border:1px solid #bdd4ca;border-radius:4px;color:#125f52;padding:1px 3px;white-space:nowrap;font-size:10px;font-weight:750}.axg .mid-guide{position:absolute;left:0;right:0;z-index:5;border-top:2px dashed #548b83;pointer-events:none}.axg .mid-guide span{position:absolute;top:-18px;left:4px;background:#f7f7f1e8;border-radius:3px;padding:1px 3px;color:#14695d;font-weight:750;font-size:10px}
+/* Only new visual style: Japanese red screw height + neutral gray center height */
+.axg .height-guide{position:absolute;left:0;right:0;z-index:2;pointer-events:none;border-top:1px dotted #c63d43}.axg .height-guide.center-guide{border-top:1px dashed #999fa1}.axg .height-guide .dot{position:absolute;left:var(--dotpos,50%);top:-4px;width:7px;height:7px;border:1.5px solid #fff;border-radius:100%;background:#c63d43}
+.axg .wall-stage{display:flex;width:100%;align-items:stretch}.axg .wall-stage .wall{flex:1;min-width:0}.axg .height-margin{width:94px;flex:0 0 94px;height:205px;background:#f8f7f3;position:relative;border:1px solid #a7aea9;border-right:0;overflow:hidden}.axg .height-margin .h-note{position:absolute;left:5px;right:3px;transform:translateY(-50%);font-size:10px;line-height:1.18;font-weight:700;pointer-events:none}.axg .height-margin .h-note strong{display:block;font-size:10px}.axg .height-margin .h-note.red{color:#bd373b}.axg .height-margin .h-note.gray{color:#61696e}.axg .height-margin .h-note:after{content:'';position:absolute;left:0;right:-4px;bottom:-4px;border-top:1px dotted currentColor;opacity:.45}
+/* Correction ciblée : jauge de hauteur verticale, depuis le sol, comme ArtHang. */
+.axg .height-margin .h-note:after{display:none}
+.axg .height-margin .h-note.red{transform:translateY(-116%)}
+.axg .height-margin .h-note.gray{transform:translateY(16%)}
+.axg .height-margin .h-ruler{position:absolute;right:10px;bottom:0;border-left:2px solid #c63d43;pointer-events:none}
+.axg .height-margin .h-ruler:before,.axg .height-margin .h-ruler:after{content:'';position:absolute;left:-6px;width:10px;border-top:1.5px solid #c63d43}
+.axg .height-margin .h-ruler:before{top:0}.axg .height-margin .h-ruler:after{bottom:0}
+.axg .height-margin .h-center-tick{position:absolute;right:5px;width:12px;border-top:1px solid #8b9394;pointer-events:none}
+
+@media(max-width:380px){.axg .height-margin{width:78px;flex-basis:78px;height:170px}.axg .height-margin .h-note{font-size:9px}.axg .height-margin .h-note strong{font-size:9px}}
+.axg .metrics{display:flex;gap:4px;align-items:stretch;margin-top:10px}.axg .metric{background:#fff!important;border:1px solid #81b2a4;border-radius:7px;min-width:0;flex:1;text-align:center;color:#145b4f!important;padding:7px 1px;font-size:11px;line-height:1.3;font-weight:650}.axg .metric strong{display:block;font-size:15px;font-weight:850;color:#0d5146!important}.axg .metric.bad{background:#fff0ec!important;color:#a33431!important}.axg .metric.bad strong{color:#a33431!important}.axg .gapcontrol{margin:11px 0;padding:11px;border:1px solid var(--bd);border-radius:11px;background:var(--card)}.axg .gapcontrol .row{align-items:end}.axg .gapcontrol .field{max-width:155px}.axg .cards{display:grid;gap:9px;margin:12px 0}.axg .card{border:1px solid var(--bd);border-radius:11px;background:var(--panel);padding:12px}.axg .card.selected{border-color:#248478}.axg .cardtop{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}.axg .pt{font-size:22px;font-weight:800;color:#198476}.axg .square{background:#faf9f6;border:1px solid #d3d4ce;border-radius:10px;padding:10px;margin-top:10px;color:#244b4b}.axg .foot{border-top:1px solid var(--bd);margin-top:14px;padding-top:11px;font-size:11px;color:var(--mut)}@media(max-width:380px){.axg .metric strong{font-size:12px}.axg .wall{height:170px}.axg .tabs button{font-size:11px}.axg .btn{padding:9px}}
+
+/* Ciblé : le repère de hauteur est superposé dans le mur, pas une colonne à côté. */
+.axg .height-margin{position:absolute;top:0;left:0;height:100%;width:10%;min-width:34px;flex:none;background:transparent;border:0;border-right:0;overflow:visible;pointer-events:none;z-index:5}
+.axg .height-margin .h-ruler{right:2px}
+.axg .height-margin .h-center-tick{right:-3px}
+.axg .height-margin .h-note{left:4px;right:auto;width:32px;max-width:32px;font-size:10px;line-height:1.08;text-shadow:0 1px 0 #f8f7f3}
+.axg .height-margin .h-note strong{font-size:10px;white-space:normal}
+@media(max-width:380px){.axg .height-margin{height:100%;width:10%;min-width:34px}.axg .height-margin .h-note,.axg .height-margin .h-note strong{font-size:9px}}
+
+/* Seulement les deux cotes générales : au-dessus et à droite du contour du mur. */
+.axg .wall-stage{position:relative;margin-top:29px;width:calc(100% - 25px)}
+.axg .wall-stage>.overall-h{left:0;right:0;top:-21px;z-index:6}
+.axg .wall-stage>.overall-v{right:-22px;top:0;height:100%;z-index:6}
+
+/* Addition limitée à l'onglet Œuvres : photo et affichage sur le mur. */
+.axg .work.has-photo:before{display:none}
+.axg .work .art-image{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#f4f0e7;pointer-events:none}
+.axg .photo-preview{width:100%;max-width:170px;max-height:150px;object-fit:contain;background:#f4f0e7;border:1px solid var(--bd);border-radius:7px;display:block;margin:9px 0}
+.axg .photo-picker{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.axg .photo-picker label{display:inline-flex;align-items:center;cursor:pointer}
+.axg .photo-picker input[type=file]{position:absolute;width:1px;height:1px;padding:0;opacity:0;overflow:hidden}
+</style></head><body>
+<div id="acc-expo-height" class="axg">
+<div class="bar"><div class="brand">▣ Ridfou Expo</div><span class="tag">Prototype test • v1</span></div>
+<div class="tabs"><button data-tab="plan" class="sel">▣ Mur</button><button data-tab="works">▧ Œuvres</button><button data-tab="attach">⌁ Attaches</button><button data-tab="drill">⊕ Perçage</button></div>
+<div id="axg-screen"></div>
+<div class="foot">La hauteur au sol est facultative. Les distances et calculs horizontaux fonctionnent sans elle. Prototype de démonstration.</div>
+</div>
+<script>
+(function(){
+const root=document.getElementById('acc-expo-height');if(!root||root.dataset.started)return;root.dataset.started='1';
+const out=root.querySelector('#axg-screen');
+// Sauvegarde locale de la V1 : dimensions, emplacements, attaches et photos.
+// IndexedDB accepte de grandes photos compressées, contrairement à localStorage.
+const PWA_DB='AccrocheExpoV1';
+const PWA_STORE='project';
+const PWA_KEY='current';
+let pwaDb=null, pwaLoaded=false, pwaSaveTimer=null;
+function pwaOpen(){
+ return new Promise(resolve=>{
+  if(!('indexedDB' in window)){resolve(null);return}
+  try{
+   const request=indexedDB.open(PWA_DB,1);
+   request.onupgradeneeded=()=>{
+    const db=request.result;
+    if(!db.objectStoreNames.contains(PWA_STORE))db.createObjectStore(PWA_STORE);
+   };
+   request.onsuccess=()=>resolve(request.result);
+   request.onerror=()=>resolve(null);
+   request.onblocked=()=>resolve(null);
+  }catch(_){resolve(null)}
+ });
+}
+function pwaRead(db){
+ return new Promise(resolve=>{
+  if(!db){try{resolve(JSON.parse(localStorage.getItem(PWA_DB)||'null'))}catch(_){resolve(null)}return}
+  try{
+   const request=db.transaction(PWA_STORE,'readonly').objectStore(PWA_STORE).get(PWA_KEY);
+   request.onsuccess=()=>resolve(request.result||null);
+   request.onerror=()=>resolve(null);
+  }catch(_){resolve(null)}
+ });
+}
+function pwaSnapshot(){
+ // Ignore la confirmation de suppression, qui n'est pas une donnée du projet.
+ return {...s,deleteId:null};
+}
+function pwaWrite(){
+ if(!pwaLoaded)return;
+ if(pwaSaveTimer!==null){clearTimeout(pwaSaveTimer);pwaSaveTimer=null}
+ const state=pwaSnapshot();
+ if(pwaDb){
+  try{pwaDb.transaction(PWA_STORE,'readwrite').objectStore(PWA_STORE).put(state,PWA_KEY)}
+  catch(_){/* possibilité de stockage indisponible, garder la session courante */}
+ }else{
+  try{localStorage.setItem(PWA_DB,JSON.stringify(state))}catch(_){/* stockage local limité */}
+ }
+}
+function pwaSave(){
+ if(!pwaLoaded)return;
+ if(pwaSaveTimer!==null)clearTimeout(pwaSaveTimer);
+ pwaSaveTimer=setTimeout(pwaWrite,120);
+}
+function pwaStart(){
+ pwaOpen().then(async db=>{
+  pwaDb=db;
+  const prev=await pwaRead(db);
+  if(prev&&typeof prev==='object'&&Array.isArray(prev.arts)&&Number.isFinite(prev.wallW)&&Number.isFinite(prev.wallH)){
+   const allowed=['wallW','wallH','desiredGap','gapOpen','heightOpen','centerOpen','centerHeight','centerScope','bottomOpen','bottomHeight','bottomScope','selected','arts'];
+   for(const key of allowed){if(Object.prototype.hasOwnProperty.call(prev,key))s[key]=prev[key]}
+   if(!s.arts.some(a=>a.id===s.selected))s.selected=s.arts[0]?.id??null;
+  }
+  s.tab='plan';s.deleteId=null;
+  pwaLoaded=true;
+  draw();
+ }).catch(()=>{pwaLoaded=true;draw()});
+}
+window.addEventListener('pagehide',pwaWrite);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')pwaWrite()});
+if('serviceWorker' in navigator && location.protocol==='https:'){
+ window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{})});
+}
+
+const s={tab:'plan',wallW:600,wallH:300,desiredGap:10,gapOpen:false,heightOpen:false,centerOpen:false,centerHeight:150,centerScope:'all',bottomOpen:false,bottomHeight:110,bottomScope:'one',selected:1,deleteId:null,arts:[
+{id:1,name:'Œuvre 1',w:65,h:95,x:70,y:92,edge:12,top:8,points:2},
+{id:2,name:'Œuvre 2',w:100,h:135,x:210,y:71,edge:15,top:10,points:2},
+{id:3,name:'Œuvre 3',w:65,h:95,x:390,y:92,edge:12,top:8,points:2}
+]};
+const f=n=>Number(n.toFixed(1)).toLocaleString('fr-FR',{maximumFractionDigits:1});
+const art=()=>s.arts.find(a=>a.id===s.selected)||s.arts[0];
+const heightsFromPlan=a=>({vis:s.wallH-a.y-a.top,mid:s.wallH-a.y-a.h/2});
+const holeXs=a=>{
+ if(a.points===1) return [a.x+a.w/2];
+ if(a.points===2||a.points==='rail') return [a.x+a.edge,a.x+a.w-a.edge];
+ if(a.points===3) return [a.x+a.edge,a.x+a.w/2,a.x+a.w-a.edge];
+ if(a.points===4){const spread=Math.max(a.edge,a.w*0.18);return [a.x+a.edge,a.x+a.w/2-spread/2,a.x+a.w/2+spread/2,a.x+a.w-a.edge]}
+ return [a.x+a.edge,a.x+a.w-a.edge];
+};
+const attachLabel=v=>v==='rail'?'Rail':`${v} point${v>1?'s':''}`;
+const attachBtnValue=v=>String(v);
+const cap=a=>{a.w=Math.max(1,Math.min(a.w,s.wallW));a.h=Math.max(1,Math.min(a.h,s.wallH));a.x=Math.min(Math.max(0,a.x),s.wallW-a.w);a.y=Math.min(Math.max(0,a.y),s.wallH-a.h);a.edge=Math.min(Math.max(0,a.edge),a.w/2)};
+const field=(title,key,value)=>`<div class="field"><label>${title}</label><input type="number" data-key="${key}" value="${f(value)}" min="0" step="0.1"></div>`;
+function layout(){const aa=[...s.arts].sort((a,b)=>a.x-b.x);let x=0,gaps=[];for(const a of aa){gaps.push({n:a.x-x});x=a.x+a.w}gaps.push({n:s.wallW-x});return{aa,gaps}}
+function heightMargin(){
+ const a=art();if(!a||!s.heightOpen)return '';
+ const visY=(a.y+a.top)/s.wallH*100, centerY=(a.y+a.h/2)/s.wallH*100;
+ const {vis:visFloor,mid:centerFloor}=heightsFromPlan(a);
+ return `<aside class="height-margin" aria-label="Hauteurs depuis le sol"><div class="h-ruler" style="top:${visY}%"></div><div class="h-center-tick" style="top:${centerY}%"></div><div class="h-note red" style="top:${visY}%">Vis<strong>${f(visFloor)} cm</strong></div><div class="h-note gray" style="top:${centerY}%">Milieu<strong>${f(centerFloor)} cm</strong></div></aside>`;
+}
+function dimensions(){
+ const {aa}=layout(),a=art();let guide='';
+ if(a){
+  const centerY=(a.y+a.h/2)/s.wallH*100;
+  if(s.heightOpen){
+    const visY=(a.y+a.top)/s.wallH*100;
+    const holes=holeXs(a);
+    guide=`<div class="height-guide" style="top:${visY}%">${holes.map(x=>`<span class="dot" style="--dotpos:${x/s.wallW*100}%"></span>`).join('')}</div><div class="height-guide center-guide" style="top:${centerY}%"></div>`;
+  } else guide=`<div class="mid-guide" style="top:${centerY}%"><span>Axe milieu</span></div>`;
+ }
+ return `${aa.map(z=>{const y=Math.min(87,(z.y+z.h)/s.wallH*100+2);return `<span class="work-size" style="left:${(z.x+z.w/2)/s.wallW*100}%;top:${y}%">${f(z.w)} cm</span>`}).join('')}${guide}`;
+}
+function gapPanel(){return `<div class="gapcontrol"><strong>↔ Écart précis entre les œuvres</strong><div class="row" style="margin-top:9px"><div class="field"><label>Écart souhaité (cm)</label><input type="number" data-key="desiredGap" min="0" step="0.1" value="${f(s.desiredGap)}"></div><button class="btn primary" data-act="applyGap">Appliquer l’écart</button></div><div class="actions" style="margin:8px 0 0"><button class="btn" data-act="presetGap" data-id="10">10 cm</button><button class="btn" data-act="presetGap" data-id="15">15 cm</button></div><p class="hint" style="margin-bottom:0">Écart identique entre les cadres. L’ensemble des œuvres est centré horizontalement sur le mur.</p></div>`}
+function centerPanel(){const selected=art();return `<div class="gapcontrol"><strong>Milieu à une hauteur précise — depuis le sol</strong><div class="row" style="margin-top:9px"><div class="field"><label>Hauteur du milieu (cm)</label><input type="number" data-center-height min="0" max="${f(s.wallH)}" step="0.1" value="${f(s.centerHeight)}"></div></div><div style="display:grid;gap:9px;margin-top:11px;font-size:12px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="radio" name="centerScope" value="one" ${s.centerScope==='one'?'checked':''} style="width:auto;margin:0;accent-color:#19756b"> Œuvre sélectionnée${selected?' ('+selected.name+')':''}</label><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="radio" name="centerScope" value="all" ${s.centerScope==='all'?'checked':''} style="width:auto;margin:0;accent-color:#19756b"> Toutes les œuvres du mur</label></div><div class="actions"><button class="btn primary" data-act="applyCenter">Appliquer la hauteur</button></div><p class="hint" style="margin-bottom:0">Seules les positions verticales changent. Les espaces horizontaux restent identiques.</p></div>`}
+function bottomPanel(){const selected=art();return `<div class="gapcontrol"><strong>Bas à une hauteur précise — depuis le sol</strong><div class="row" style="margin-top:9px"><div class="field"><label>Hauteur du bas de l’œuvre (cm)</label><input type="number" data-bottom-height min="0" max="${f(s.wallH)}" step="0.1" value="${f(s.bottomHeight)}"></div></div><div style="display:grid;gap:9px;margin-top:11px;font-size:12px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="radio" name="bottomScope" value="one" ${s.bottomScope==='one'?'checked':''} style="width:auto;margin:0;accent-color:#19756b"> Œuvre sélectionnée${selected?' ('+selected.name+')':''}</label><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="radio" name="bottomScope" value="all" ${s.bottomScope==='all'?'checked':''} style="width:auto;margin:0;accent-color:#19756b"> Toutes les œuvres du mur</label></div><div class="actions"><button class="btn primary" data-act="applyBottom">Appliquer la hauteur</button></div><p class="hint" style="margin-bottom:0">Seules les positions verticales changent. Les espaces horizontaux restent identiques.</p></div>`}
+function plan(){const {gaps}=layout();return `<div class="bar"><strong>Mur A — Plan d’exposition</strong><span class="pill">Horizontal prioritaire</span></div><div class="row">${field('Largeur du mur (cm)','wallW',s.wallW)}${field('Hauteur du mur (cm)','wallH',s.wallH)}</div><div class="wallbox"><div class="bar"><span class="small" style="color:#36544d">Vue de face — ${f(s.wallW)} × ${f(s.wallH)} cm</span><span class="small" style="color:#36544d">À l’échelle</span></div><div class="wall-stage"><div class="measure overall-h"><span class="wall-label">${f(s.wallW)} cm</span></div><div class="measure overall-v"><span class="vertical-label">${f(s.wallH)} cm</span></div><div class="wall" id="axg-wall"><div class="axis"></div>${heightMargin()}${dimensions()}${s.arts.map((a,i)=>`<div class="work n${i%3} ${a.id===s.selected?'selected':''} ${a.photo?'has-photo':''}" data-art="${a.id}" style="left:${a.x/s.wallW*100}%;top:${a.y/s.wallH*100}%;width:${a.w/s.wallW*100}%;height:${a.h/s.wallH*100}%">${a.photo?`<img class="art-image" src="${a.photo}" alt="Photo de ${a.name}">`:''}<span>${a.id}</span></div>`).join('')}</div></div><div class="metrics">${gaps.map((g,i)=>`<div class="metric ${g.n<0?'bad':''}"><span>${i===0?'Gauche':i===gaps.length-1?'Droite':'Écart '+i}</span><strong>${f(g.n)} cm</strong></div>`).join('')}</div>${s.heightOpen&&art()?'<p class="hint" style="color:#496057;margin:7px 0 0;font-size:11px">Hauteurs calculées depuis le plan de démonstration (positions et attaches préremplies).</p>':''}</div><div class="actions"><button class="btn primary" data-act="equal">↔ Espaces égaux</button><button class="btn ${s.gapOpen?'active':''}" data-act="toggleGap" aria-expanded="${s.gapOpen}">↔ Écart</button><button class="btn" data-act="center">⊞ Aligner milieux</button><button class="btn ${s.centerOpen?'active':''}" data-act="toggleCenter" aria-expanded="${s.centerOpen}">↕ Milieu à hauteur…</button><button class="btn ${s.bottomOpen?'active':''}" data-act="toggleBottom" aria-expanded="${s.bottomOpen}">↕ Bas à hauteur…</button><button class="btn" data-act="top">⊤ Aligner haut</button><button class="btn" data-act="bottom">⊥ Aligner bas</button><button class="btn" data-act="add">＋ Œuvre</button><button class="btn ${s.heightOpen?'active':''}" data-act="toggleHeight" aria-expanded="${s.heightOpen}">${s.heightOpen?'Masquer la hauteur':'Afficher la hauteur'}</button></div>${s.gapOpen?gapPanel():''}${s.centerOpen?centerPanel():''}${s.bottomOpen?bottomPanel():''}<p class="hint">Déplace une œuvre avec le doigt sur le mur. Les distances horizontales s’actualisent après le déplacement.</p><div class="row">${art()?`<span class="pill">Œuvre sélectionnée : ${art().name}</span><button class="btn" data-act="works">Modifier ses dimensions</button>`:'<span class="pill">Aucune œuvre</span>'}</div>`}
+function works(){return `<div class="bar"><strong>Mes œuvres</strong><button class="btn primary" data-act="add">＋ Ajouter</button></div><p class="hint">Sélectionne une œuvre pour modifier ses dimensions. Le plan se met à jour.</p>${s.arts.length?`<div class="cards">${s.arts.map(a=>`<div class="card ${s.selected===a.id?'selected':''}"><div class="cardtop"><strong>${a.name}</strong><div class="row"><button class="btn ${a.id===s.selected?'active':''}" data-act="select" data-id="${a.id}">${a.id===s.selected?'Sélectionnée':'Choisir'}</button><button class="btn danger" data-act="askDelete" data-id="${a.id}">Supprimer</button></div></div>${s.deleteId===a.id?`<p class="hint">Supprimer ${a.name} du mur ?</p><div class="actions"><button class="btn danger" data-act="confirmDelete" data-id="${a.id}">Oui, supprimer</button><button class="btn" data-act="cancelDelete">Annuler</button></div>`:''}${a.id===s.selected?`<div class="row">${field('Largeur (cm)','w',a.w)}${field('Hauteur (cm)','h',a.h)}</div><div class="row" style="margin-top:8px">${field('Depuis le bord gauche (cm)','x',a.x)}</div><div style="margin-top:12px"><strong>Photo de l’œuvre</strong>${a.photo?`<img class="photo-preview" src="${a.photo}" alt="Aperçu de ${a.name}">`:'<p class="hint" style="margin:5px 0">Ajoute la photo de cette œuvre pour la voir sur le mur.</p>'}<div class="photo-picker"><label class="btn" for="photo-camera-${a.id}">📷 Prendre une photo</label><input id="photo-camera-${a.id}" type="file" accept="image/*" capture="environment" data-photo="${a.id}"><label class="btn" for="photo-file-${a.id}">▧ Choisir une photo</label><input id="photo-file-${a.id}" type="file" accept="image/*" data-photo="${a.id}">${a.photo?`<button class="btn" data-act="removePhoto" data-id="${a.id}">Enlever la photo</button>`:''}</div></div>`:`<div class="small">${f(a.w)} × ${f(a.h)} cm${a.photo?' · Photo ajoutée':''}</div>`}</div>`).join('')}</div>`:'<p class="hint">Aucune œuvre. Appuie sur « Ajouter » pour recommencer.</p>'}<button class="btn primary" data-act="plan">Voir le plan →</button>`}
+function attachSchema(a){
+ const xs=holeXs(a).map(x=>48+144*(x-a.x)/a.w);
+ const y=Math.max(18,Math.min(133,18+115*a.top/a.h));
+ const rail=a.points==='rail';
+ const line=rail?'':`<path d="M48 ${y}H192" stroke="#9fa8a0" stroke-dasharray="5 4"/>`;
+ const railShape=rail?`<rect x="60" y="${y-6}" width="120" height="12" rx="2" fill="#b7c0c3" stroke="#7f8b90"/><text x="120" y="${Math.max(11,y-10)}" text-anchor="middle" font-size="10" fill="#5f6d72">Rail</text>`:'';
+ return `<svg viewBox="0 0 240 145" width="100%" style="max-height:150px"><rect x="48" y="18" width="144" height="115" fill="#f4eddf" stroke="#60645d" stroke-width="3"/>${railShape}${line}<g fill="#16877b">${xs.map(x=>`<circle cx="${x}" cy="${y}" r="5"/>`).join('')}</g></svg>`;
+}
+function attach(){const a=art();if(!a)return '<p class="hint">Aucune œuvre. Ajoute une œuvre dans l’onglet Œuvres.</p>';const options=[1,2,3,'rail',4];const showEdge=a.points!==1;return `<div class="bar"><strong>Attaches — ${a.name}</strong><button class="btn" data-act="works">Changer d'œuvre</button></div><div class="card"><span class="small">Nombre de points d’accrochage</span><div class="actions" style="flex-wrap:nowrap;overflow-x:auto">${options.map(p=>`<button class="btn ${p===a.points?'active':''}" data-act="points" data-id="${attachBtnValue(p)}">${attachLabel(p)}</button>`).join('')}</div><div class="row">${field('Du haut à l’attache (cm)','top',a.top)}${showEdge?field('Du bord latéral à l’attache (cm)','edge',a.edge):''}</div><div class="square" style="text-align:center"><div id="attach-schema">${attachSchema(a)}</div><div class="small">Schéma indicatif, non à l’échelle des attaches</div></div></div><div class="actions"><button class="btn primary" data-act="drill">Calculer les perçages →</button></div>`}
+function drill(){const a=art();if(!a)return '<p class="hint">Aucune œuvre. Ajoute une œuvre dans l’onglet Œuvres.</p>';const xs=holeXs(a);const hs=heightsFromPlan(a);const names=a.points===1?['Trou unique']:xs.map((x,i)=>`Point ${i+1}`);const hint=a.points===4?'<p class="hint">4 points alignés sur une même ligne.</p>':a.points===3?'<p class="hint">3 points alignés sur une même ligne.</p>':a.points==='rail'?'<p class="hint">Rail : positions indicatives des deux fixations.</p>':'';return `<div class="bar"><strong>Perçage — ${a.name}</strong><span class="pill">Sans saisie de hauteur</span></div><div class="card"><div class="small">Positions depuis le bord gauche du mur</div>${xs.map((x,i)=>`<div style="padding:12px 0;border-bottom:1px solid var(--bd)"><div class="small">${names[i]}</div><div class="pt">${f(x)} cm</div></div>`).join('')}${hint}${xs.length>=2?`<div style="padding-top:10px"><strong>↔ Entraxe total : ${f(xs[xs.length-1]-xs[0])} cm</strong></div>`:''}</div><div class="card"><strong>Hauteurs depuis le sol — calculées à partir du plan</strong><div style="margin-top:10px;color:#be3e43;font-weight:700">Vis : ${f(hs.vis)} cm</div><div style="margin-top:6px;color:var(--mut);font-weight:700">Milieu de l’œuvre : ${f(hs.mid)} cm</div><p class="hint">Valeurs calculées depuis le plan de démonstration (positions et attaches préremplies), et non saisies par toi. À vérifier avant perçage. La hauteur au sol reste facultative.</p></div><div class="actions"><button class="btn" data-act="attach">← Modifier les attaches</button><button class="btn" data-act="plan">Voir le mur</button></div><p class="hint">Avant perçage réel, vérifier les mesures, le type de mur et la résistance des fixations.</p>`}
+function applyGap(g){if(!Number.isFinite(g)||g<0)return;const aa=[...s.arts].sort((a,b)=>a.x-b.x),total=aa.reduce((v,a)=>v+a.w,0);const needed=total+g*Math.max(0,aa.length-1);if(needed>s.wallW+0.00001){alert('Les œuvres et les écarts demandés dépassent la largeur du mur.');return}let x=(s.wallW-needed)/2;for(const a of aa){a.x=x;x+=a.w+g}}
+function draw(){root.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('sel',b.dataset.tab===s.tab));out.innerHTML=s.tab==='plan'?plan():s.tab==='works'?works():s.tab==='attach'?attach():drill();if(s.tab==='plan')bindDrag();pwaSave()}
+function bindDrag(){const wall=out.querySelector('#axg-wall');if(!wall)return;wall.querySelectorAll('.work').forEach(el=>el.addEventListener('pointerdown',ev=>{const a=s.arts.find(o=>o.id===Number(el.dataset.art));s.selected=a.id;const rect=wall.getBoundingClientRect(),startX=ev.clientX,startY=ev.clientY,origX=a.x,origY=a.y;el.setPointerCapture(ev.pointerId);el.addEventListener('pointermove',move);el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);function move(e){a.x=Math.max(0,Math.min(s.wallW-a.w,origX+(e.clientX-startX)/rect.width*s.wallW));a.y=Math.max(0,Math.min(s.wallH-a.h,origY+(e.clientY-startY)/rect.height*s.wallH));el.style.left=`${a.x/s.wallW*100}%`;el.style.top=`${a.y/s.wallH*100}%`}function end(){el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',end);el.removeEventListener('pointercancel',end);draw()}ev.preventDefault()}))}
+root.addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){s.tab=tab.dataset.tab;draw();return}const b=e.target.closest('button[data-act]');if(!b)return;const act=b.dataset.act;if(['plan','works','attach','drill'].includes(act)){s.tab=act;draw();return}if(act==='toggleCenter'){s.centerOpen=!s.centerOpen;draw();return}if(act==='toggleBottom'){s.bottomOpen=!s.bottomOpen;draw();return}if(act==='applyBottom'){const input=out.querySelector('[data-bottom-height]');const raw=input?.value?.trim()||'';const n=Number(raw);const scope=out.querySelector('input[name="bottomScope"]:checked')?.value||s.bottomScope;if(!raw||!Number.isFinite(n)||n<0||n>s.wallH){alert('Indique une hauteur comprise entre 0 et '+f(s.wallH)+' cm.');return}const aa=scope==='all'?s.arts:[art()].filter(Boolean);if(!aa.length){alert('Aucune œuvre sélectionnée.');return}const impossible=aa.filter(a=>n+a.h>s.wallH+0.00001);if(impossible.length){alert('Hauteur impossible pour '+impossible.map(a=>a.name).join(', ')+' : les œuvres doivent rester dans le mur.');return}s.bottomHeight=n;s.bottomScope=scope;for(const a of aa)a.y=s.wallH-n-a.h;draw();return}if(act==='applyCenter'){const input=out.querySelector('[data-center-height]');const raw=input?.value?.trim()||'';const n=Number(raw);const scope=out.querySelector('input[name="centerScope"]:checked')?.value||s.centerScope;if(!raw||!Number.isFinite(n)||n<0||n>s.wallH){alert('Indique une hauteur comprise entre 0 et '+f(s.wallH)+' cm.');return}const aa=scope==='all'?s.arts:[art()].filter(Boolean);if(!aa.length){alert('Aucune œuvre sélectionnée.');return}const impossible=aa.filter(a=>n<a.h/2-0.00001||n>s.wallH-a.h/2+0.00001);if(impossible.length){alert('Hauteur impossible pour '+impossible.map(a=>a.name).join(', ')+' : les œuvres doivent rester dans le mur.');return}s.centerHeight=n;s.centerScope=scope;for(const a of aa)a.y=s.wallH-n-a.h/2;draw();return}if(act==='toggleGap'){s.gapOpen=!s.gapOpen;draw();return}if(act==='toggleHeight'){s.heightOpen=!s.heightOpen;draw();return}if(act==='select'){s.selected=Number(b.dataset.id);s.deleteId=null;draw();return}if(act==='askDelete'){s.deleteId=Number(b.dataset.id);draw();return}if(act==='cancelDelete'){s.deleteId=null;draw();return}if(act==='confirmDelete'){const id=Number(b.dataset.id);if(id!==s.deleteId)return;s.arts=s.arts.filter(a=>a.id!==id);if(s.selected===id)s.selected=s.arts[0]?.id??null;s.deleteId=null;draw();return}if(act==='add'){const id=Math.max(0,...s.arts.map(a=>a.id))+1;s.arts.push({id,name:'Œuvre '+id,w:50,h:75,x:Math.max(0,Math.min(40*id,s.wallW-50)),y:90,edge:10,top:8,points:2});s.selected=id;s.tab='works';s.deleteId=null;draw();return}if(act==='equal'){const aa=[...s.arts].sort((a,b)=>a.x-b.x),total=aa.reduce((v,a)=>v+a.w,0);if(total>=s.wallW){alert('Le total des largeurs dépasse le mur.');return}const gap=(s.wallW-total)/(aa.length+1);let x=gap;for(const a of aa){a.x=x;x+=a.w+gap}draw();return}if(act==='applyGap'){const input=out.querySelector('[data-key="desiredGap"]'),n=Number(input?.value);if(!input||input.value.trim()===''||!Number.isFinite(n)||n<0){alert('Indique un écart positif ou nul.');return}s.desiredGap=n;applyGap(n);draw();return}if(act==='presetGap'){const n=Number(b.dataset.id);s.desiredGap=n;applyGap(n);draw();return}if(['center','top','bottom'].includes(act)){const a=art();if(!a)return;const ref=act==='center'?a.y+a.h/2:act==='top'?a.y:a.y+a.h;for(const v of s.arts){v.y=Math.max(0,Math.min(s.wallH-v.h,act==='center'?ref-v.h/2:act==='top'?ref:ref-v.h))}draw();return}if(act==='removePhoto'){const a=s.arts.find(z=>z.id===Number(b.dataset.id));if(a){delete a.photo;draw()}return}if(act==='points'){const a=art();if(a){const raw=b.dataset.id;a.points=raw==='rail'?'rail':Number(raw)}draw()}});
+root.addEventListener('input',e=>{const input=e.target.closest('input[data-key]');if(!input||s.tab!=='attach')return;const key=input.dataset.key;if(key!=='top'&&key!=='edge')return;const n=Number(input.value);if(input.value.trim()===''||!Number.isFinite(n)||n<0)return;const a=art();if(!a)return;a[key]=n;const svg=out.querySelector('#attach-schema');if(svg)svg.innerHTML=attachSchema(a);pwaSave()});
+root.addEventListener('change',e=>{const photoInput=e.target.closest('input[type="file"][data-photo]');if(photoInput){const file=photoInput.files?.[0];const id=Number(photoInput.dataset.photo);if(!file)return;if(!file.type.startsWith('image/')&&!/\.(heic|heif|jpg|jpeg|png|webp)$/i.test(file.name)){alert('Choisis une image.');return}const reader=new FileReader();reader.onload=()=>{const a=s.arts.find(z=>z.id===id);if(!a)return;const data=reader.result;const img=new Image();img.onload=()=>{try{const max=1200,scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(img.naturalWidth*scale));cv.height=Math.max(1,Math.round(img.naturalHeight*scale));const ctx=cv.getContext('2d');ctx.fillStyle='#f4f0e7';ctx.fillRect(0,0,cv.width,cv.height);ctx.drawImage(img,0,0,cv.width,cv.height);a.photo=cv.toDataURL('image/jpeg',0.85)}catch(e){a.photo=data}draw()};img.onerror=()=>{a.photo=data;draw()};img.src=data};reader.readAsDataURL(file);return}if(e.target.matches('input[name="centerScope"]')){s.centerScope=e.target.value;pwaSave();return}if(e.target.matches('input[name="bottomScope"]')){s.bottomScope=e.target.value;pwaSave();return}const input=e.target.closest('input[data-key]');if(!input)return;const key=input.dataset.key;if(key==='desiredGap'){const n=Number(input.value);if(input.value.trim()!==''&&Number.isFinite(n)&&n>=0)s.desiredGap=n;pwaSave();return}const n=Number(input.value);if(!Number.isFinite(n))return;if(s.tab==='attach'&&(key==='top'||key==='edge')){const a=art();if(a){a[key]=Math.max(0,n);if(key==='edge')a.edge=Math.min(a.edge,a.w/2);const svg=out.querySelector('#attach-schema');if(svg)svg.innerHTML=attachSchema(a);pwaSave()}return}if(key==='wallW'||key==='wallH'){s[key]=Math.max(50,n);for(const a of s.arts)cap(a)}else{const a=art();if(!a)return;a[key]=['w','h'].includes(key)?Math.max(1,n):Math.max(0,n);cap(a)}draw()});pwaStart();
+})();
+</script></body></html>

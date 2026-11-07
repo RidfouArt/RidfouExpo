@@ -1,0 +1,27 @@
+{
+  "id": "./",
+  "name": "Ridfou Expo",
+  "short_name": "Ridfou Expo",
+  "description": "Outil de préparation d’accrochages, plans et perçages.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#090909",
+  "theme_color": "#101918",
+  "orientation": "portrait",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
