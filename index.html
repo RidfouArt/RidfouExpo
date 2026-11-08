@@ -159,6 +159,15 @@ body{background:#f8f2e8!important;color:#183150!important}
 #ridfou-export-dialog .ridfou-export-bottom button{width:100%}
 @media(max-width:370px){#ridfou-export-dialog .ridfou-export-toolbar strong{font-size:11px}#ridfou-export-dialog button{font-size:12px}}
 
+/* Corrections ciblées : suppression sécurisée du mur et lisibilité des quatre hauteurs. */
+.axg .wall-remove-row{display:flex;justify-content:flex-end;margin:-6px 0 12px}
+.axg .wall-remove-row .btn{font-size:12px;padding:7px 11px;min-height:34px}
+.axg .wall-remove-confirm{border:1px solid #e1aaa8;background:#fff8f7;border-radius:10px;padding:12px;margin:-4px 0 13px;color:#7c312e;font-size:12px;line-height:1.5}
+.axg .wall-remove-confirm .actions{margin:8px 0 0}
+.axg .wall-remove-confirm .btn{color:#274561;background:#fff}
+.axg .wall-remove-confirm .btn.danger{background:#b63c3b;color:white!important;border-color:#b63c3b}
+.axg .drill-grid .drill-point .pt{font-size:22px}
+@media(max-width:380px){.axg .drill-grid .drill-point .pt{font-size:19px}}
 /* Cinquième onglet, avec les deux calculatrices autonomes (ne touche pas aux mesures du plan). */
 .axg .tabs{grid-template-columns:repeat(5,minmax(0,1fr))}
 @media(max-width:410px){.axg .tabs{gap:2px;padding:3px}.axg .tabs button{font-size:10.5px;padding:10px 1px;white-space:nowrap}}
@@ -298,8 +307,20 @@ function loadWall(w){
  editGapIndex=-1;gapError='';
 }
 function chooseWall(id){
- syncActiveWall();const wall=s.walls.find(w=>w.id===id);
+ pendingDeleteWallId=null;syncActiveWall();const wall=s.walls.find(w=>w.id===id);
  if(wall){loadWall(wall);s.tab='plan';draw();}
+}
+function removeSelectedWall(){
+ // Ne jamais supprimer le dernier mur. Conserver les autres murs et leurs œuvres.
+ if(s.walls.length<=1||pendingDeleteWallId!==s.currentWallId)return;
+ const at=s.walls.findIndex(w=>w.id===s.currentWallId);
+ if(at<0)return;
+ s.walls.splice(at,1);
+ pendingDeleteWallId=null;
+ const next=s.walls[Math.min(at,s.walls.length-1)];
+ loadWall(next);
+ s.tab='plan';
+ draw();
 }
 function addWall(){
  syncActiveWall();let index=0,id;
@@ -309,6 +330,8 @@ function addWall(){
  s.walls.push(newWall);loadWall(newWall);s.tab='plan';draw();
 }
 let importChoicesOpen=false,importPreviewOpen=false;
+// Confirmation de suppression limitée au mur sélectionné (non sauvegardée).
+let pendingDeleteWallId=null;
 const safeText=t=>String(t||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 // Détection locale : les propositions ne remplacent jamais un mur sans validation.
@@ -529,7 +552,9 @@ function createRecognizedWalls(){
 }
 
 function wallSelector(){
- return `<div class="wall-switch"><label for="wall-choice">Mur de l’exposition<select id="wall-choice" aria-label="Choisir le mur">${s.walls.map(w=>`<option value="${w.id}" ${s.currentWallId===w.id?'selected':''}>${w.name}</option>`).join('')}</select></label><div class="wall-tools"><button type="button" class="btn primary" data-act="addWall">＋ Mur</button><button type="button" class="btn" data-act="toggleImport" aria-expanded="${importChoicesOpen}">Importer</button></div></div>${importChoicesOpen?`<div class="import-choices"><label class="btn" for="import-camera">📷 Prendre une photo</label><input id="import-camera" type="file" accept="image/*" capture="environment" data-import-plan="camera"><label class="btn" for="import-picker">▧ Photo ou PDF</label><input id="import-picker" type="file" accept="image/*,.heic,.heif,.pdf,application/pdf" data-import-plan="picker"></div>`:''}${referencePlanBlock()}`;
+ const current=s.walls.find(w=>w.id===s.currentWallId);
+ const allowDelete=s.walls.length>1;
+ return `<div class="wall-switch"><label for="wall-choice">Mur de l’exposition<select id="wall-choice" aria-label="Choisir le mur">${s.walls.map(w=>`<option value="${w.id}" ${s.currentWallId===w.id?'selected':''}>${w.name}</option>`).join('')}</select></label><div class="wall-tools"><button type="button" class="btn primary" data-act="addWall">＋ Mur</button><button type="button" class="btn" data-act="toggleImport" aria-expanded="${importChoicesOpen}">Importer</button></div></div>${allowDelete?`<div class="wall-remove-row"><button type="button" class="btn danger" data-act="askDeleteWall" aria-label="Supprimer ${safeText(current?.name||'ce mur')}">Supprimer ce mur</button></div>${pendingDeleteWallId===s.currentWallId?`<div class="wall-remove-confirm" role="alert"><strong>Supprimer ${safeText(current?.name||'ce mur')} ?</strong><div>Ses œuvres, photos et cotes seront supprimées de cette application. Les autres murs seront conservés.</div><div class="actions"><button type="button" class="btn danger" data-act="confirmDeleteWall">Oui, supprimer ${safeText(current?.name||'ce mur')}</button><button type="button" class="btn" data-act="cancelDeleteWall">Annuler</button></div></div>`:''}`:''}${importChoicesOpen?`<div class="import-choices"><label class="btn" for="import-camera">📷 Prendre une photo</label><input id="import-camera" type="file" accept="image/*" capture="environment" data-import-plan="camera"><label class="btn" for="import-picker">▧ Photo ou PDF</label><input id="import-picker" type="file" accept="image/*,.heic,.heif,.pdf,application/pdf" data-import-plan="picker"></div>`:''}${referencePlanBlock()}`;
 }
 function referencePlanBlock(){
  const p=s.importedPlan;if(!p)return '';
@@ -687,8 +712,8 @@ function drill(){
  <div class="card"><div class="small">Positions horizontales depuis le bord gauche du mur</div><div class="drill-points">${cards}</div>
  ${xs.length>=2?`<strong>↔ Entraxe : ${f(xs[xs.length-1]-xs[0])} cm</strong>`:''}
  ${warnings}</div>
- <div class="card"><strong>Hauteurs depuis le sol — indicatives d’après le plan</strong><div class="drill-grid"><div class="drill-point"><div class="small">Vis (rangée haute)</div><div class="pt" style="color:#be3e43!important">${f(hs.vis)} cm</div></div><div class="drill-point"><div class="small">Milieu de l’œuvre</div><div class="pt" style="color:#647891!important">${f(hs.mid)} cm</div></div></div>
- <p class="hint">Ces hauteurs proviennent du placement sur le plan ; elles ne sont pas une mesure validée sur chantier. Elles sont facultatives. ${a.points===4?(bottomPoint?`Vis rangée basse : ${f(s.wallH-a.y-bottomPoint.offset)} cm, indicatif d’après le plan.`:'La hauteur des points bas nécessite leur cote spécifique.'):''}</p></div>
+ <div class="card"><strong>Hauteurs depuis le sol — indicatives d’après le plan</strong><div class="drill-grid"><div class="drill-point"><div class="small">Vis (rangée haute)</div><div class="pt" style="color:#be3e43!important">${f(hs.vis)} cm</div></div>${a.points===4?`<div class="drill-point"><div class="small">Vis (rangée basse)</div>${bottomPoint?`<div class="pt" style="color:#be3e43!important">${f(s.wallH-a.y-bottomPoint.offset)} cm</div>`:'<div class="pt" style="color:#946e27!important">— cm</div><div class="drill-help">Cote des attaches basses à renseigner</div>'}</div>`:''}<div class="drill-point"><div class="small">Milieu de l’œuvre</div><div class="pt" style="color:#647891!important">${f(hs.mid)} cm</div></div></div>
+ <p class="hint">Ces hauteurs proviennent du placement sur le plan ; elles ne sont pas des mesures validées sur chantier. Elles sont facultatives.${a.points===4&&!bottomPoint?' Dans Attaches, indique la distance du bas du cadre aux attaches basses pour obtenir leur hauteur.':''}</p></div>
  <div class="actions"><button class="btn" data-act="attach">← Modifier les attaches</button><button class="btn" data-act="plan">Voir le mur</button><button class="btn primary" data-act="siteMode">☑ Mode chantier</button><button class="btn" data-act="exportPdf">▧ PDF coté du mur</button></div>
  <div class="actions"><button class="btn" data-act="toggleFixings">${s.showFixings===false?'Afficher':'Masquer'} les points sur le plan</button></div>
  <p class="hint">Avant tout perçage, contrôle les mesures, la nature du mur, la charge et la résistance des fixations.</p>`;
@@ -1218,7 +1243,10 @@ if(act==='siteMode'){s.siteMode=true;draw();return}
 if(act==='closeSiteMode'){s.siteMode=false;draw();return}
 if(act==='toggleInstalled'){const a=s.arts.find(x=>x.id===Number(b.dataset.id));if(a){a.installed=!a.installed;draw()}return}
 if(act==='inspectWork'){s.selected=Number(b.dataset.id);s.siteMode=false;draw();return}
-if(act==='addWall'){addWall();return}
+if(act==='askDeleteWall'){if(s.walls.length>1){pendingDeleteWallId=s.currentWallId;draw()}return}
+if(act==='cancelDeleteWall'){pendingDeleteWallId=null;draw();return}
+if(act==='confirmDeleteWall'){removeSelectedWall();return}
+if(act==='addWall'){pendingDeleteWallId=null;addWall();return}
 if(act==='rerunRecognition'){recognitionError='';if(s.importedPlan)analyzeImportedPlan(s.currentWallId,null);return}
 if(act==='createRecognizedWalls'){createRecognizedWalls();return}
 if(act==='toggleImport'){importChoicesOpen=!importChoicesOpen;draw();return}
