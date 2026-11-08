@@ -3,7 +3,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Ridfou Expo">
-<meta name="description" content="Préparer ses accrochages : mur, œuvres, attaches, perçage et hauteurs.">
+<meta name="description" content="Préparer ses accrochages : mur, œuvres, attaches, perçage, hauteurs et calculatrices.">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png"><style>
 :root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif}body{background:#090909;color:#f3f3f3;margin:0;padding:15px}.axg{font:14px system-ui,-apple-system,sans-serif;color:#f5f5f5;width:100%;max-width:860px;margin:0 auto;--ac:#19756b;--bd:#484848;--mut:#b6b6b6;--panel:#303030;--card:#292929}
@@ -158,10 +158,35 @@ body{background:#f8f2e8!important;color:#183150!important}
 #ridfou-export-dialog .ridfou-export-bottom{display:flex;padding:8px 12px calc(12px + env(safe-area-inset-bottom,0px));justify-content:center}
 #ridfou-export-dialog .ridfou-export-bottom button{width:100%}
 @media(max-width:370px){#ridfou-export-dialog .ridfou-export-toolbar strong{font-size:11px}#ridfou-export-dialog button{font-size:12px}}
+
+/* Cinquième onglet, avec les deux calculatrices autonomes (ne touche pas aux mesures du plan). */
+.axg .tabs{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media(max-width:410px){.axg .tabs{gap:2px;padding:3px}.axg .tabs button{font-size:10.5px;padding:10px 1px;white-space:nowrap}}
+.axg .calc-intro{margin:2px 0 13px;color:#536e88;font-size:12px;line-height:1.5}
+.axg .calc-card{border:1px solid #c8d8e7;background:#fff;border-radius:12px;padding:14px;margin:0 0 16px}
+.axg .calc-title{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:16px;font-weight:800;color:#244b74;margin:0 0 12px}
+.axg .calc-unit{border:1px solid #b7d3e9;border-radius:40px;background:#e7f2ff;color:#245a8c;font-size:12px;font-weight:750;padding:4px 9px}
+.axg .calc-field{display:flex;flex-direction:column;gap:4px;margin:10px 0}
+.axg .calc-field label{font-size:12px;color:#405c78;font-weight:650;line-height:1.45}
+.axg .calc-field input,.axg .calc-field select{width:100%;min-height:42px;border-radius:8px;border:1px solid #b8cadc;background:#fff;color:#20314a;font-size:16px;padding:9px 10px;font-family:inherit}
+.axg .calc-field select{appearance:auto}
+.axg .calc-result{margin:14px 0 11px;padding:14px 10px;border:1px solid #cadde8;border-radius:10px;background:#f1f7fb;text-align:center;min-height:96px}
+.axg .calc-result small{display:block;font-size:12px;color:#536c84;margin-bottom:6px}
+.axg .calc-value{font-size:30px;line-height:1.25;font-weight:850;color:#205d99;font-variant-numeric:tabular-nums}
+.axg .calc-label{margin-top:4px;font-size:12px;color:#435f7c;line-height:1.45;font-weight:650}
+.axg .calc-formula-box{border-top:1px solid #dce7ef;margin-top:13px;padding-top:12px}
+.axg .calc-formula-heading{color:#254e72;font-size:13px;font-weight:750;margin-bottom:8px}
+.axg .calc-formula{display:block;text-align:center;font-size:17px;font-weight:750;color:#234a6f;line-height:1.6;overflow-wrap:anywhere}
+.axg .calc-substitution{font-size:12px;color:#255d93;text-align:center;margin-top:8px;line-height:1.55;font-weight:700;overflow-wrap:anywhere}
+.axg .calc-explain{font-size:11px;color:#60758b;margin-top:8px;line-height:1.5}
+.axg .calc-actions{display:flex;gap:8px;justify-content:stretch;margin-top:13px}
+.axg .calc-actions .btn{flex:1;min-width:0}
+.axg .calc-actions .btn:disabled{opacity:.45;cursor:default}
+.axg .calc-copy-feedback{text-align:center;font-size:11px;color:#157455;min-height:14px;margin-top:6px}
 </style></head><body>
 <div id="acc-expo-height" class="axg">
 <div class="bar"><div class="brand">▣ Ridfou Expo</div><span class="tag">Ridfou Expo</span></div>
-<div class="tabs"><button data-tab="plan" class="sel">▣ Mur</button><button data-tab="works">▧ Œuvres</button><button data-tab="attach">⌁ Attaches</button><button data-tab="drill">⊕ Perçage</button></div>
+<div class="tabs"><button data-tab="plan" class="sel">▣ Mur</button><button data-tab="works">▧ Œuvres</button><button data-tab="attach">⌁ Attaches</button><button data-tab="drill">⊕ Perçage</button><button data-tab="calc">∑ Calculs</button></div>
 <div id="axg-screen"></div>
 <div class="foot">La hauteur au sol est facultative. Les distances et calculs horizontaux fonctionnent sans elle. Prototype de démonstration.</div>
 </div>
@@ -1088,9 +1113,104 @@ function applyDirectGap(index, wanted){
 }
 
 function applyGap(g){if(!Number.isFinite(g)||g<0)return;const aa=[...s.arts].sort((a,b)=>a.x-b.x),total=aa.reduce((v,a)=>v+a.w,0);const needed=total+g*Math.max(0,aa.length-1);if(needed>s.wallW+0.00001){alert('Les œuvres et les écarts demandés dépassent la largeur du mur.');return}let x=(s.wallW-needed)/2;for(const a of aa){a.x=x;x+=a.w+g}}
-function draw(){root.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('sel',b.dataset.tab===s.tab));out.innerHTML=s.tab==='plan'?plan():s.tab==='works'?works():s.tab==='attach'?attach():drill();if(s.tab==='plan')bindDrag();pwaSave()}
+
+// Calculatrices indépendantes : valeurs de session sans réécrire les données des murs.
+const rfCalc={hMode:'milieu',h1:'',h2:'',h3:'',wMode:'trous',w1:'',w2:'',w3:''};
+function rfN(v){
+ const raw=String(v??'').replace(/[\s\u00a0\u202f]/g,'').replace(',','.');
+ if(!raw||!/^\d+(?:\.\d+)?$/.test(raw))return null;
+ const n=Number(raw);return Number.isFinite(n)?n:null;
+}
+function rfF(v){return Number(v).toLocaleString('fr-FR',{maximumFractionDigits:2})}
+function rfCalcHeight(){
+ const ref=rfN(rfCalc.h1),dim=rfN(rfCalc.h2),a=rfN(rfCalc.h3),m=rfCalc.hMode;
+ if(m==='decalage'){
+  if(ref===null||dim===null)return {value:null,error:'Entre les hauteurs des deux trous.'};
+  return {value:dim-ref,label:dim>ref?'Monter de '+rfF(dim-ref)+' cm':dim<ref?'Descendre de '+rfF(ref-dim)+' cm':'Même hauteur',sub:rfF(dim)+' − '+rfF(ref)+' = '+(dim-ref>0?'+':'')+rfF(dim-ref)+' cm'};
+ }
+ if(ref===null||a===null||(m!=='haut'&&dim===null))return {value:null,error:'Entre tes mesures pour calculer la hauteur du trou.'};
+ if(m!=='haut'&&(dim<=0||a>dim))return {value:null,error:'Vérifie la hauteur de l’œuvre et la distance de l’attache.'};
+ const v=ref+(m==='milieu'?dim/2:m==='bas'?dim:0)-a;
+ if(v<0)return {value:null,error:'Le point de fixation serait sous le sol : vérifie les cotes.'};
+ return {value:v,label:'Hauteur du trou depuis le sol',sub:m==='milieu'?rfF(ref)+' + ('+rfF(dim)+' ÷ 2) − '+rfF(a)+' = '+rfF(v)+' cm':m==='bas'?rfF(ref)+' + '+rfF(dim)+' − '+rfF(a)+' = '+rfF(v)+' cm':rfF(ref)+' − '+rfF(a)+' = '+rfF(v)+' cm'};
+}
+function rfCalcWidth(){
+ const a=rfN(rfCalc.w1),b=rfN(rfCalc.w2),c=rfN(rfCalc.w3),m=rfCalc.wMode;
+ if(m==='espaces'){
+  const chunks=rfCalc.w2.split(/[+;]/).map(x=>x.trim());
+  const nums=chunks.map(rfN);
+  if(a===null||!rfCalc.w2.trim())return {value:null,error:'Entre la largeur du mur et les largeurs des œuvres.'};
+  if(a<=0||nums.some(n=>n===null||n<=0))return {value:null,error:'Indique des largeurs positives séparées par +.'};
+  const sum=nums.reduce((x,y)=>x+y,0);
+  if(sum>a)return {value:null,error:'Les œuvres dépassent la largeur du mur.'};
+  const v=(a-sum)/(nums.length+1);
+  return {value:v,label:'Écart identique, bords du mur compris',sub:'('+rfF(a)+' − '+rfF(sum)+') ÷ '+(nums.length+1)+' = '+rfF(v)+' cm'};
+ }
+ if(a===null||b===null||c===null)return {value:null,error:'Entre les trois mesures pour obtenir le résultat.'};
+ if(m==='entraxe'){
+  if(a<=0||b+c>a)return {value:null,error:'Les retraits des attaches dépassent la largeur de l’œuvre.'};
+  const v=a-b-c;
+  return {value:v,label:'Entraxe horizontal des attaches',sub:rfF(a)+' − '+rfF(b)+' − '+rfF(c)+' = '+rfF(v)+' cm'};
+ }
+ const v=a+b+c;
+ return {value:v,label:'Distance à droite depuis le dernier trou',sub:rfF(a)+' + '+rfF(b)+' + '+rfF(c)+' = '+rfF(v)+' cm'};
+}
+function rfCalcInput(key,label,placeholder,keyboard='decimal'){
+ return '<div class="calc-field"><label for="rf-'+key+'">'+label+' (cm)</label><input id="rf-'+key+'" type="text" inputmode="'+keyboard+'" autocomplete="off" spellcheck="false" data-calc-input="'+key+'" value="'+rfCalc[key].replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')+'" placeholder="'+placeholder+'"></div>';
+}
+function rfCalcView(){
+ const hm=rfCalc.hMode,wm=rfCalc.wMode;
+ const hFormula={milieu:'H<sub>trou</sub> = H<sub>milieu</sub> + (H<sub>œuvre</sub> ÷ 2) − A',haut:'H<sub>trou</sub> = H<sub>haut</sub> − A',bas:'H<sub>trou</sub> = H<sub>bas</sub> + H<sub>œuvre</sub> − A',decalage:'ΔH = H<sub>2</sub> − H<sub>1</sub>'}[hm];
+ const wFormula={trous:'D = A<sub>d1</sub> + E + A<sub>g2</sub>',entraxe:'E<sub>a</sub> = L − A<sub>g</sub> − A<sub>d</sub>',espaces:'E = (M − ΣL) ÷ (N + 1)'}[wm];
+ return '<div class="calc-intro">Deux calculatrices indépendantes. Entre seulement tes cotes en <b>cm</b> : résultat et formule détaillée apparaissent automatiquement. Ces calculs ne déplacent pas les œuvres du plan.</div>'+ 
+ '<section class="calc-card"><h2 class="calc-title">↕ 1. Hauteur <span class="calc-unit">cm</span></h2>'+ 
+ '<div class="calc-field"><label for="rf-hMode">Choisir une méthode</label><select id="rf-hMode" data-calc-method="h">'+[
+ ['milieu','Milieu de l’œuvre'],['haut','Haut de l’œuvre'],['bas','Bas de l’œuvre'],['decalage','Déplacement vertical · trou à trou']].map(([v,t])=>'<option value="'+v+'"'+(hm===v?' selected':'')+'>'+t+'</option>').join('')+'</select></div>'+ 
+ rfCalcInput('h1',hm==='decalage'?'Hauteur du premier trou':hm==='milieu'?'Milieu depuis le sol':hm==='haut'?'Haut depuis le sol':'Bas depuis le sol',hm==='milieu'?'Ex. 155':hm==='bas'?'Ex. 100':'Ex. 180')+
+ (hm==='haut'?'':rfCalcInput('h2',hm==='decalage'?'Hauteur du deuxième trou':'Hauteur de l’œuvre',hm==='decalage'?'Ex. 195':'Ex. 80'))+
+ (hm==='decalage'?'':rfCalcInput('h3','Du haut de l’œuvre à l’attache','Ex. 5'))+
+ '<div class="calc-result" aria-live="polite"><small>Résultat vertical</small><div id="rf-h-result" class="calc-value">— cm</div><div id="rf-h-label" class="calc-label">Entre tes mesures.</div></div>'+ 
+ '<div class="calc-formula-box"><div class="calc-formula-heading">Formule utilisée</div><span class="calc-formula">'+hFormula+'</span><div id="rf-h-sub" class="calc-substitution"></div><div class="calc-explain">'+(hm==='decalage'?'Si le résultat est positif, tu montes ; s’il est négatif, tu descends.':'A = distance entre le haut de l’œuvre et l’axe de son attache.')+'</div></div>'+ 
+ '<div class="calc-actions"><button class="btn" data-act="clearCalc" data-which="h">↺ Effacer</button><button class="btn primary" data-act="copyCalc" data-which="h" id="rf-copy-h" disabled>Copier</button></div><div class="calc-copy-feedback" id="rf-feedback-h"></div></section>'+ 
+ '<section class="calc-card"><h2 class="calc-title">↔ 2. Largeur <span class="calc-unit">cm</span></h2>'+ 
+ '<div class="calc-field"><label for="rf-wMode">Choisir une méthode</label><select id="rf-wMode" data-calc-method="w">'+[
+ ['trous','De trou à trou entre deux œuvres'],['entraxe','Entraxe des attaches'],['espaces','Espaces égaux sur un mur']].map(([v,t])=>'<option value="'+v+'"'+(wm===v?' selected':'')+'>'+t+'</option>').join('')+'</select></div>'+ 
+ rfCalcInput('w1',wm==='trous'?'Dernier trou → bord droit de l’œuvre 1':wm==='entraxe'?'Largeur de l’œuvre':'Largeur du mur',wm==='trous'?'Ex. 7':wm==='entraxe'?'Ex. 100':'Ex. 600')+
+ rfCalcInput('w2',wm==='trous'?'Écart entre les deux œuvres':wm==='entraxe'?'Bord gauche → attache gauche':'Largeurs des œuvres (séparées par +)',wm==='trous'?'Ex. 15':wm==='entraxe'?'Ex. 5':'Ex. 80 + 100 + 60',wm==='espaces'?'text':'decimal')+
+ (wm==='espaces'?'':rfCalcInput('w3',wm==='trous'?'Bord gauche œuvre 2 → premier trou':'Bord droit → attache droite','Ex. 5'))+
+ '<div class="calc-result" aria-live="polite"><small>Résultat horizontal</small><div id="rf-w-result" class="calc-value">— cm</div><div id="rf-w-label" class="calc-label">Entre tes mesures.</div></div>'+ 
+ '<div class="calc-formula-box"><div class="calc-formula-heading">Formule utilisée</div><span class="calc-formula">'+wFormula+'</span><div id="rf-w-sub" class="calc-substitution"></div><div class="calc-explain">'+(wm==='trous'?'Dernière attache → bord droit + écart entre cadres + bord gauche → première attache.':wm==='entraxe'?'Largeur de l’œuvre moins les deux retraits des attaches.':'M = largeur du mur ; ΣL = somme des largeurs des œuvres ; N = nombre d’œuvres.')+'</div></div>'+ 
+ '<div class="calc-actions"><button class="btn" data-act="clearCalc" data-which="w">↺ Effacer</button><button class="btn primary" data-act="copyCalc" data-which="w" id="rf-copy-w" disabled>Copier</button></div><div class="calc-copy-feedback" id="rf-feedback-w"></div></section>';
+}
+function rfCalcUpdate(){
+ if(s.tab!=='calc')return;
+ for(const which of ['h','w']){
+  const r=which==='h'?rfCalcHeight():rfCalcWidth();
+  const value=out.querySelector('#rf-'+which+'-result'),label=out.querySelector('#rf-'+which+'-label'),sub=out.querySelector('#rf-'+which+'-sub'),button=out.querySelector('#rf-copy-'+which);
+  if(!value||!label||!sub||!button)continue;
+  value.textContent=r.value===null?'— cm':rfF(which==='h'&&rfCalc.hMode==='decalage'?Math.abs(r.value):r.value)+' cm';
+  label.textContent=r.value===null?r.error:r.label;
+  sub.textContent=r.value===null?'':r.sub;
+  button.disabled=r.value===null;
+ }
+}
+function draw(){root.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('sel',b.dataset.tab===s.tab));out.innerHTML=s.tab==='plan'?plan():s.tab==='works'?works():s.tab==='attach'?attach():s.tab==='calc'?rfCalcView():drill();if(s.tab==='plan')bindDrag();if(s.tab==='calc')rfCalcUpdate();pwaSave()}
 function bindDrag(){const wall=out.querySelector('#axg-wall');if(!wall)return;wall.querySelectorAll('.work').forEach(el=>el.addEventListener('pointerdown',ev=>{const a=s.arts.find(o=>o.id===Number(el.dataset.art));s.selected=a.id;const rect=wall.getBoundingClientRect(),startX=ev.clientX,startY=ev.clientY,origX=a.x,origY=a.y;el.setPointerCapture(ev.pointerId);el.addEventListener('pointermove',move);el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);function move(e){a.x=Math.max(0,Math.min(s.wallW-a.w,origX+(e.clientX-startX)/rect.width*s.wallW));a.y=Math.max(0,Math.min(s.wallH-a.h,origY+(e.clientY-startY)/rect.height*s.wallH));el.style.left=`${a.x/s.wallW*100}%`;el.style.top=`${a.y/s.wallH*100}%`}function end(){el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',end);el.removeEventListener('pointercancel',end);draw()}ev.preventDefault()}))}
 root.addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){s.tab=tab.dataset.tab;if(s.tab!=='drill')s.siteMode=false;draw();return}const b=e.target.closest('button[data-act]');if(!b)return;const act=b.dataset.act;
+if(act==='clearCalc'){
+ const w=b.dataset.which;if(w!=='h'&&w!=='w')return;
+ for(const k of ['1','2','3'])rfCalc[w+k]='';
+ draw();return;
+}
+if(act==='copyCalc'){
+ const w=b.dataset.which;if(w!=='h'&&w!=='w')return;
+ const r=w==='h'?rfCalcHeight():rfCalcWidth();if(r.value===null)return;
+ const text=(w==='h'&&rfCalc.hMode==='decalage'?r.label:rfF(r.value)+' cm');
+ const feedback=out.querySelector('#rf-feedback-'+w);
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>{if(feedback)feedback.textContent='Résultat copié';}).catch(()=>{window.prompt('Copie la mesure :',text);});}
+ else window.prompt('Copie la mesure :',text);
+ return;
+}
 if(act==='exportPdf'){exportPdf(false);return}
 if(act==='exportAllPdf'){exportPdf(true);return}
 if(act==='toggleFixings'){s.showFixings=!s.showFixings;draw();return}
@@ -1117,8 +1237,14 @@ if(act==='saveGap'){
 }
 if(['plan','works','attach','drill'].includes(act)){s.tab=act;s.siteMode=false;draw();return}if(act==='toggleCenter'){s.centerOpen=!s.centerOpen;draw();return}if(act==='toggleBottom'){s.bottomOpen=!s.bottomOpen;draw();return}if(act==='applyBottom'){const input=out.querySelector('[data-bottom-height]');const raw=input?.value?.trim()||'';const n=Number(raw);const scope=out.querySelector('input[name="bottomScope"]:checked')?.value||s.bottomScope;if(!raw||!Number.isFinite(n)||n<0||n>s.wallH){alert('Indique une hauteur comprise entre 0 et '+f(s.wallH)+' cm.');return}const aa=scope==='all'?s.arts:[art()].filter(Boolean);if(!aa.length){alert('Aucune œuvre sélectionnée.');return}const impossible=aa.filter(a=>n+a.h>s.wallH+0.00001);if(impossible.length){alert('Hauteur impossible pour '+impossible.map(a=>a.name).join(', ')+' : les œuvres doivent rester dans le mur.');return}s.bottomHeight=n;s.bottomScope=scope;for(const a of aa)a.y=s.wallH-n-a.h;draw();return}if(act==='applyCenter'){const input=out.querySelector('[data-center-height]');const raw=input?.value?.trim()||'';const n=Number(raw);const scope=out.querySelector('input[name="centerScope"]:checked')?.value||s.centerScope;if(!raw||!Number.isFinite(n)||n<0||n>s.wallH){alert('Indique une hauteur comprise entre 0 et '+f(s.wallH)+' cm.');return}const aa=scope==='all'?s.arts:[art()].filter(Boolean);if(!aa.length){alert('Aucune œuvre sélectionnée.');return}const impossible=aa.filter(a=>n<a.h/2-0.00001||n>s.wallH-a.h/2+0.00001);if(impossible.length){alert('Hauteur impossible pour '+impossible.map(a=>a.name).join(', ')+' : les œuvres doivent rester dans le mur.');return}s.centerHeight=n;s.centerScope=scope;for(const a of aa)a.y=s.wallH-n-a.h/2;draw();return}if(act==='toggleGap'){s.gapOpen=!s.gapOpen;draw();return}if(act==='toggleHeight'){s.heightOpen=!s.heightOpen;draw();return}if(act==='select'){s.selected=Number(b.dataset.id);s.deleteId=null;draw();return}if(act==='askDelete'){s.deleteId=Number(b.dataset.id);draw();return}if(act==='cancelDelete'){s.deleteId=null;draw();return}if(act==='confirmDelete'){const id=Number(b.dataset.id);if(id!==s.deleteId)return;s.arts=s.arts.filter(a=>a.id!==id);if(s.selected===id)s.selected=s.arts[0]?.id??null;s.deleteId=null;draw();return}if(act==='add'){const id=Math.max(0,...s.arts.map(a=>a.id))+1;s.arts.push({id,name:'Œuvre '+id,w:50,h:75,x:Math.max(0,Math.min(40*id,s.wallW-50)),y:90,edge:10,top:8,points:2});s.selected=id;s.tab='works';s.deleteId=null;draw();return}if(act==='equal'){if(!s.arts.length){alert('Ajoute d’abord une œuvre sur ce mur depuis l’onglet Œuvres.');return}const aa=[...s.arts].sort((a,b)=>a.x-b.x),total=aa.reduce((v,a)=>v+a.w,0);if(total>=s.wallW){alert('Le total des largeurs dépasse le mur.');return}const gap=(s.wallW-total)/(aa.length+1);let x=gap;for(const a of aa){a.x=x;x+=a.w+gap}draw();return}if(act==='applyGap'){const input=out.querySelector('[data-key="desiredGap"]'),n=Number(input?.value);if(!input||input.value.trim()===''||!Number.isFinite(n)||n<0){alert('Indique un écart positif ou nul.');return}s.desiredGap=n;applyGap(n);draw();return}if(act==='presetGap'){const n=Number(b.dataset.id);s.desiredGap=n;applyGap(n);draw();return}if(['center','top','bottom'].includes(act)){const a=art();if(!a)return;const ref=act==='center'?a.y+a.h/2:act==='top'?a.y:a.y+a.h;for(const v of s.arts){v.y=Math.max(0,Math.min(s.wallH-v.h,act==='center'?ref-v.h/2:act==='top'?ref:ref-v.h))}draw();return}if(act==='removePhoto'){const a=s.arts.find(z=>z.id===Number(b.dataset.id));if(a){delete a.photo;draw()}return}if(act==='points'){const a=art();if(a){const raw=b.dataset.id;a.points=raw==='rail'?'rail':Number(raw);if(a.points===4&&a.bottomOffset===undefined)a.bottomOffset=''}draw()}});
 root.addEventListener('keydown',e=>{if(e.target?.id!=='gap-direct-input')return;if(e.key==='Enter'){e.preventDefault();out.querySelector('[data-act=saveGap]')?.click();}else if(e.key==='Escape'){e.preventDefault();out.querySelector('[data-act=cancelGap]')?.click();}});
+root.addEventListener('input',e=>{const input=e.target.closest('input[data-calc-input]');if(!input||s.tab!=='calc')return;const key=input.dataset.calcInput;if(Object.prototype.hasOwnProperty.call(rfCalc,key)){rfCalc[key]=input.value;rfCalcUpdate();}});
 root.addEventListener('input',e=>{const input=e.target.closest('input[data-key]');if(!input||s.tab!=='attach')return;const key=input.dataset.key;if(key!=='top'&&key!=='edge'&&key!=='bottomOffset')return;const raw=input.value.trim();const a=art();if(!a)return;if(key==='bottomOffset'&&raw===''){a.bottomOffset='';const svg=out.querySelector('#attach-schema');if(svg)svg.innerHTML=attachSchema(a);pwaSave();return}const n=Number(raw);if(raw===''||!Number.isFinite(n)||n<0)return;a[key]=n;const svg=out.querySelector('#attach-schema');if(svg)svg.innerHTML=attachSchema(a);pwaSave()});
-root.addEventListener('change',e=>{if(e.target?.id==='wall-choice'){chooseWall(e.target.value);return;}const ai=s.importedPlan?.analysis;if(ai&&Array.isArray(ai.candidates)){
+root.addEventListener('change',e=>{if(e.target?.matches('[data-calc-method]')){
+ const group=e.target.dataset.calcMethod;
+ if(group==='h'){rfCalc.hMode=e.target.value;rfCalc.h1=rfCalc.h2=rfCalc.h3='';}
+ else if(group==='w'){rfCalc.wMode=e.target.value;rfCalc.w1=rfCalc.w2=rfCalc.w3='';}
+ draw();return;
+ }if(e.target?.id==='wall-choice'){chooseWall(e.target.value);return;}const ai=s.importedPlan?.analysis;if(ai&&Array.isArray(ai.candidates)){
  const ck=e.target.closest('input[data-candidate-check]');if(ck){const c=ai.candidates[Number(ck.dataset.candidateCheck)];if(c){c.checked=ck.checked;recognitionError='';pwaSave();}return;}
  const inp=e.target.closest('input[data-candidate-cm]');if(inp){const c=ai.candidates[Number(inp.dataset.candidateCm)];if(c){c.cm=inp.value.trim()===''?'':Number(inp.value.replace(',','.'));recognitionError='';pwaSave();}return;}
  }const refInput=e.target.closest('input[type="file"][data-import-plan]');if(refInput){importPlanFile(refInput.files?.[0],refInput.dataset.importPlan);return;}const photoInput=e.target.closest('input[type="file"][data-photo]');if(photoInput){const file=photoInput.files?.[0];const id=Number(photoInput.dataset.photo);if(!file)return;if(!file.type.startsWith('image/')&&!/\.(heic|heif|jpg|jpeg|png|webp)$/i.test(file.name)){alert('Choisis une image.');return}const reader=new FileReader();reader.onload=()=>{const a=s.arts.find(z=>z.id===id);if(!a)return;const data=reader.result;const img=new Image();img.onload=()=>{try{const max=1200,scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(img.naturalWidth*scale));cv.height=Math.max(1,Math.round(img.naturalHeight*scale));const ctx=cv.getContext('2d');ctx.fillStyle='#f4f0e7';ctx.fillRect(0,0,cv.width,cv.height);ctx.drawImage(img,0,0,cv.width,cv.height);a.photo=cv.toDataURL('image/jpeg',0.85)}catch(e){a.photo=data}draw()};img.onerror=()=>{a.photo=data;draw()};img.src=data};reader.readAsDataURL(file);return}if(e.target.matches('input[name="centerScope"]')){s.centerScope=e.target.value;pwaSave();return}if(e.target.matches('input[name="bottomScope"]')){s.bottomScope=e.target.value;pwaSave();return}const input=e.target.closest('input[data-key]');if(!input)return;const key=input.dataset.key;if(key==='desiredGap'){const n=Number(input.value);if(input.value.trim()!==''&&Number.isFinite(n)&&n>=0)s.desiredGap=n;pwaSave();return}const n=Number(input.value);if(!Number.isFinite(n))return;if(s.tab==='attach'&&(key==='top'||key==='edge'||key==='bottomOffset')){const a=art();if(a){a[key]=key==='bottomOffset'&&input.value.trim()===''?'':Math.max(0,n);if(key==='edge')a.edge=Math.min(a.edge,a.w/2);draw()}return}if(key==='wallW'||key==='wallH'){s[key]=Math.max(50,n);for(const a of s.arts)cap(a)}else{const a=art();if(!a)return;a[key]=['w','h'].includes(key)?Math.max(1,n):Math.max(0,n);cap(a)}draw()});pwaStart();
