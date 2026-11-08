@@ -59,6 +59,19 @@
 .axg .wall-switch .btn{min-height:41px;white-space:nowrap}
 @media(max-width:380px){.axg .wall-switch{gap:6px}.axg .wall-switch .btn{padding-inline:9px}}
 
+/* Import de plan de référence (image/photo/PDF) : aucun calcul automatique. */
+.axg .wall-tools{display:flex;align-items:end;gap:6px}
+.axg .wall-tools .btn{padding:10px 9px}
+.axg .import-choices{display:flex;gap:7px;flex-wrap:wrap;margin:-4px 0 11px}
+.axg .import-choices label{display:inline-flex;align-items:center;cursor:pointer}
+.axg .import-choices input[type=file]{position:absolute;width:1px;height:1px;padding:0;opacity:0;overflow:hidden}
+.axg .import-reference{margin:-2px 0 12px;padding:9px;border:1px solid #bbcedd;border-radius:10px;background:#fff}
+.axg .import-reference .import-head{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.axg .import-reference .import-head .import-name{font-size:12px;flex:1;min-width:90px;overflow-wrap:anywhere;color:#324f70}
+.axg .import-reference .btn{padding:6px 9px;font-size:11px}
+.axg .import-reference img{display:block;width:auto;max-width:100%;max-height:330px;object-fit:contain;margin:9px auto 2px;border:1px solid var(--bd);border-radius:7px}
+.axg .import-reference .import-info{font-size:11px;color:var(--mut);margin:7px 2px 0}
+@media(max-width:390px){.axg .wall-tools .btn{padding:9px 6px;font-size:11px}.axg .wall-switch{gap:5px}}
 /* Palette claire : reprise de Ridfou Expo existant, sans toucher à ses fonctionnalités. */
 :root{color-scheme:light!important}
 body{background:#f8f2e8!important;color:#183150!important}
@@ -150,7 +163,7 @@ function pwaStart(){
   pwaDb=db;
   const prev=await pwaRead(db);
   if(prev&&typeof prev==='object'&&Array.isArray(prev.arts)&&Number.isFinite(prev.wallW)&&Number.isFinite(prev.wallH)){
-   const allowed=['wallW','wallH','desiredGap','gapOpen','heightOpen','centerOpen','centerHeight','centerScope','bottomOpen','bottomHeight','bottomScope','selected','arts'];
+   const allowed=['wallW','wallH','desiredGap','gapOpen','heightOpen','centerOpen','centerHeight','centerScope','bottomOpen','bottomHeight','bottomScope','selected','arts','importedPlan'];
    for(const key of allowed){if(Object.prototype.hasOwnProperty.call(prev,key))s[key]=prev[key]}
    if(!s.arts.some(a=>a.id===s.selected))s.selected=s.arts[0]?.id??null;
    if(Array.isArray(prev.walls)&&prev.walls.length){
@@ -171,14 +184,14 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
  window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{})});
 }
 
-const s={walls:[],currentWallId:'A',tab:'plan',wallW:600,wallH:300,desiredGap:10,gapOpen:false,heightOpen:false,centerOpen:false,centerHeight:150,centerScope:'all',bottomOpen:false,bottomHeight:110,bottomScope:'one',selected:1,deleteId:null,arts:[
+const s={walls:[],currentWallId:'A',tab:'plan',wallW:600,wallH:300,desiredGap:10,gapOpen:false,heightOpen:false,centerOpen:false,centerHeight:150,centerScope:'all',bottomOpen:false,bottomHeight:110,bottomScope:'one',selected:1,deleteId:null,importedPlan:null,arts:[
 {id:1,name:'Œuvre 1',w:65,h:95,x:70,y:92,edge:12,top:8,points:2},
 {id:2,name:'Œuvre 2',w:100,h:135,x:210,y:71,edge:15,top:10,points:2},
 {id:3,name:'Œuvre 3',w:65,h:95,x:390,y:92,edge:12,top:8,points:2}
 ]};
 
 // Compatibilité : les données existantes deviennent « Mur A » sans être effacées.
-const WALL_KEYS=['wallW','wallH','desiredGap','heightOpen','centerOpen','centerHeight','centerScope','bottomOpen','bottomHeight','bottomScope','selected','arts'];
+const WALL_KEYS=['wallW','wallH','desiredGap','heightOpen','centerOpen','centerHeight','centerScope','bottomOpen','bottomHeight','bottomScope','selected','arts','importedPlan'];
 function wallFromActive(id,name){
  const w={id,name};for(const k of WALL_KEYS)w[k]=s[k];return w;
 }
@@ -192,8 +205,9 @@ function loadWall(w){
  if(!w)return;
  s.currentWallId=w.id;
  for(const key of WALL_KEYS){if(Object.prototype.hasOwnProperty.call(w,key))s[key]=w[key];}
+ s.importedPlan=w.importedPlan||null;
  s.selected=s.arts.some(a=>a.id===s.selected)?s.selected:(s.arts[0]?.id??null);
- s.centerOpen=false;s.bottomOpen=false;s.gapOpen=false;
+ s.centerOpen=false;s.bottomOpen=false;s.gapOpen=false;importChoicesOpen=false;importPreviewOpen=false;
  editGapIndex=-1;gapError='';
 }
 function chooseWall(id){
@@ -204,11 +218,61 @@ function addWall(){
  syncActiveWall();let index=0,id;
  do{id=String.fromCharCode(65+index);index++;}while(s.walls.some(w=>w.id===id)&&index<26);
  if(s.walls.some(w=>w.id===id)){alert('Maximum de 26 murs pour cette version.');return;}
- const newWall={id,name:`Mur ${id}`,wallW:600,wallH:300,desiredGap:10,heightOpen:false,centerOpen:false,centerHeight:150,centerScope:'all',bottomOpen:false,bottomHeight:110,bottomScope:'one',selected:null,arts:[]};
+ const newWall={id,name:`Mur ${id}`,wallW:600,wallH:300,desiredGap:10,heightOpen:false,centerOpen:false,centerHeight:150,centerScope:'all',bottomOpen:false,bottomHeight:110,bottomScope:'one',selected:null,arts:[],importedPlan:null};
  s.walls.push(newWall);loadWall(newWall);s.tab='plan';draw();
 }
+let importChoicesOpen=false,importPreviewOpen=false;
+const safeText=t=>String(t||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function wallSelector(){
- return `<div class="wall-switch"><label for="wall-choice">Mur de l’exposition<select id="wall-choice" aria-label="Choisir le mur">${s.walls.map(w=>`<option value="${w.id}" ${s.currentWallId===w.id?'selected':''}>${w.name}</option>`).join('')}</select></label><button type="button" class="btn primary" data-act="addWall">＋ Mur</button></div>`;
+ return `<div class="wall-switch"><label for="wall-choice">Mur de l’exposition<select id="wall-choice" aria-label="Choisir le mur">${s.walls.map(w=>`<option value="${w.id}" ${s.currentWallId===w.id?'selected':''}>${w.name}</option>`).join('')}</select></label><div class="wall-tools"><button type="button" class="btn primary" data-act="addWall">＋ Mur</button><button type="button" class="btn" data-act="toggleImport" aria-expanded="${importChoicesOpen}">Importer</button></div></div>${importChoicesOpen?`<div class="import-choices"><label class="btn" for="import-camera">📷 Prendre une photo</label><input id="import-camera" type="file" accept="image/*" capture="environment" data-import-plan="camera"><label class="btn" for="import-picker">▧ Photo ou PDF</label><input id="import-picker" type="file" accept="image/*,.heic,.heif,.pdf,application/pdf" data-import-plan="picker"></div>`:''}${referencePlanBlock()}`;
+}
+function referencePlanBlock(){
+ const p=s.importedPlan;if(!p)return '';
+ const isPdf=p.kind==='pdf';
+ return `<div class="import-reference"><div class="import-head"><span class="import-name">📎 ${safeText(p.name)} (${isPdf?'PDF':'photo'})</span><button type="button" class="btn" data-act="viewImportedPlan">${isPdf?'Ouvrir':'Aperçu'}</button><button type="button" class="btn" data-act="removeImportedPlan" aria-label="Retirer le plan importé">✕</button></div>${!isPdf&&importPreviewOpen?`<img src="${p.data}" alt="Plan photographié : ${safeText(p.name)}">`:''}<div class="import-info">Référence visuelle du mur : aucune mesure n'est extraite automatiquement.</div></div>`;
+}
+function openPdfReference(){
+ const p=s.importedPlan;if(!p||p.kind!=='pdf'||!p.data)return;
+ try{
+  const bytes=atob(p.data.split(',')[1]);
+  const arr=new Uint8Array(bytes.length);
+  for(let i=0;i<bytes.length;i++)arr[i]=bytes.charCodeAt(i);
+  const url=URL.createObjectURL(new Blob([arr],{type:'application/pdf'}));
+  window.open(url,'_blank','noopener');
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+ }catch(err){alert('Impossible d’ouvrir ce PDF sur cet appareil.');}
+}
+function importPlanFile(file,source){
+ if(!file)return;
+ const ext=(file.name||'').toLowerCase();
+ const pdf=file.type==='application/pdf'||ext.endsWith('.pdf');
+ const image=!pdf&&(file.type.startsWith('image/')||/\.(heic|heif|jpe?g|png|webp)$/i.test(ext));
+ if(!pdf&&!image){alert('Choisis une photo ou un fichier PDF.');return;}
+ if(file.size>10*1024*1024){alert('Fichier trop volumineux (maximum 10 Mo).');return;}
+ const wallId=s.currentWallId;
+ const reader=new FileReader();
+ reader.onerror=()=>alert('Impossible de lire le fichier.');
+ reader.onload=()=>{
+  const data=reader.result;
+  const target=s.walls.find(w=>w.id===wallId);
+  if(!target)return;
+  function save(plan){target.importedPlan=plan;if(s.currentWallId===wallId){s.importedPlan=plan;importChoicesOpen=false;importPreviewOpen=plan.kind==='image';draw();}}
+  if(pdf){save({name:file.name||'Plan.pdf',kind:'pdf',data});return;}
+  const img=new Image();
+  img.onload=()=>{
+   try{
+    const max=1700,scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+    const cv=document.createElement('canvas');
+    cv.width=Math.max(1,Math.round(img.naturalWidth*scale));
+    cv.height=Math.max(1,Math.round(img.naturalHeight*scale));
+    const ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);ctx.drawImage(img,0,0,cv.width,cv.height);
+    save({name:file.name||'Photo du plan',kind:'image',data:cv.toDataURL('image/jpeg',0.85)});
+   }catch(e){save({name:file.name||'Photo du plan',kind:'image',data});}
+  };
+  img.onerror=()=>alert('Cette photo ne peut pas être affichée. Essaie de la convertir en JPEG.');
+  img.src=data;
+ };
+ reader.readAsDataURL(file);
 }
 
 const f=n=>Number(Number(n).toFixed(1)).toLocaleString('fr-FR',{maximumFractionDigits:1});
@@ -290,6 +354,9 @@ function draw(){root.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggl
 function bindDrag(){const wall=out.querySelector('#axg-wall');if(!wall)return;wall.querySelectorAll('.work').forEach(el=>el.addEventListener('pointerdown',ev=>{const a=s.arts.find(o=>o.id===Number(el.dataset.art));s.selected=a.id;const rect=wall.getBoundingClientRect(),startX=ev.clientX,startY=ev.clientY,origX=a.x,origY=a.y;el.setPointerCapture(ev.pointerId);el.addEventListener('pointermove',move);el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);function move(e){a.x=Math.max(0,Math.min(s.wallW-a.w,origX+(e.clientX-startX)/rect.width*s.wallW));a.y=Math.max(0,Math.min(s.wallH-a.h,origY+(e.clientY-startY)/rect.height*s.wallH));el.style.left=`${a.x/s.wallW*100}%`;el.style.top=`${a.y/s.wallH*100}%`}function end(){el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',end);el.removeEventListener('pointercancel',end);draw()}ev.preventDefault()}))}
 root.addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){s.tab=tab.dataset.tab;draw();return}const b=e.target.closest('button[data-act]');if(!b)return;const act=b.dataset.act;
 if(act==='addWall'){addWall();return}
+if(act==='toggleImport'){importChoicesOpen=!importChoicesOpen;draw();return}
+if(act==='viewImportedPlan'){if(s.importedPlan?.kind==='pdf')openPdfReference();else{importPreviewOpen=!importPreviewOpen;draw();}return}
+if(act==='removeImportedPlan'){if(s.importedPlan){s.importedPlan=null;const w=s.walls.find(w=>w.id===s.currentWallId);if(w)w.importedPlan=null;importPreviewOpen=false;draw();}return}
 if(act==='editGap'){editGapIndex=Number(b.dataset.gap);gapError='';draw();requestAnimationFrame(()=>{const input=out.querySelector('#gap-direct-input');if(input){input.focus();input.select();}});return}
 if(act==='cancelGap'){editGapIndex=-1;gapError='';draw();return}
 if(act==='saveGap'){
@@ -304,6 +371,6 @@ if(act==='saveGap'){
 if(['plan','works','attach','drill'].includes(act)){s.tab=act;draw();return}if(act==='toggleCenter'){s.centerOpen=!s.centerOpen;draw();return}if(act==='toggleBottom'){s.bottomOpen=!s.bottomOpen;draw();return}if(act==='applyBottom'){const input=out.querySelector('[data-bottom-height]');const raw=input?.value?.trim()||'';const n=Number(raw);const scope=out.querySelector('input[name="bottomScope"]:checked')?.value||s.bottomScope;if(!raw||!Number.isFinite(n)||n<0||n>s.wallH){alert('Indique une hauteur comprise entre 0 et '+f(s.wallH)+' cm.');return}const aa=scope==='all'?s.arts:[art()].filter(Boolean);if(!aa.length){alert('Aucune œuvre sélectionnée.');return}const impossible=aa.filter(a=>n+a.h>s.wallH+0.00001);if(impossible.length){alert('Hauteur impossible pour '+impossible.map(a=>a.name).join(', ')+' : les œuvres doivent rester dans le mur.');return}s.bottomHeight=n;s.bottomScope=scope;for(const a of aa)a.y=s.wallH-n-a.h;draw();return}if(act==='applyCenter'){const input=out.querySelector('[data-center-height]');const raw=input?.value?.trim()||'';const n=Number(raw);const scope=out.querySelector('input[name="centerScope"]:checked')?.value||s.centerScope;if(!raw||!Number.isFinite(n)||n<0||n>s.wallH){alert('Indique une hauteur comprise entre 0 et '+f(s.wallH)+' cm.');return}const aa=scope==='all'?s.arts:[art()].filter(Boolean);if(!aa.length){alert('Aucune œuvre sélectionnée.');return}const impossible=aa.filter(a=>n<a.h/2-0.00001||n>s.wallH-a.h/2+0.00001);if(impossible.length){alert('Hauteur impossible pour '+impossible.map(a=>a.name).join(', ')+' : les œuvres doivent rester dans le mur.');return}s.centerHeight=n;s.centerScope=scope;for(const a of aa)a.y=s.wallH-n-a.h/2;draw();return}if(act==='toggleGap'){s.gapOpen=!s.gapOpen;draw();return}if(act==='toggleHeight'){s.heightOpen=!s.heightOpen;draw();return}if(act==='select'){s.selected=Number(b.dataset.id);s.deleteId=null;draw();return}if(act==='askDelete'){s.deleteId=Number(b.dataset.id);draw();return}if(act==='cancelDelete'){s.deleteId=null;draw();return}if(act==='confirmDelete'){const id=Number(b.dataset.id);if(id!==s.deleteId)return;s.arts=s.arts.filter(a=>a.id!==id);if(s.selected===id)s.selected=s.arts[0]?.id??null;s.deleteId=null;draw();return}if(act==='add'){const id=Math.max(0,...s.arts.map(a=>a.id))+1;s.arts.push({id,name:'Œuvre '+id,w:50,h:75,x:Math.max(0,Math.min(40*id,s.wallW-50)),y:90,edge:10,top:8,points:2});s.selected=id;s.tab='works';s.deleteId=null;draw();return}if(act==='equal'){if(!s.arts.length){alert('Ajoute d’abord une œuvre sur ce mur depuis l’onglet Œuvres.');return}const aa=[...s.arts].sort((a,b)=>a.x-b.x),total=aa.reduce((v,a)=>v+a.w,0);if(total>=s.wallW){alert('Le total des largeurs dépasse le mur.');return}const gap=(s.wallW-total)/(aa.length+1);let x=gap;for(const a of aa){a.x=x;x+=a.w+gap}draw();return}if(act==='applyGap'){const input=out.querySelector('[data-key="desiredGap"]'),n=Number(input?.value);if(!input||input.value.trim()===''||!Number.isFinite(n)||n<0){alert('Indique un écart positif ou nul.');return}s.desiredGap=n;applyGap(n);draw();return}if(act==='presetGap'){const n=Number(b.dataset.id);s.desiredGap=n;applyGap(n);draw();return}if(['center','top','bottom'].includes(act)){const a=art();if(!a)return;const ref=act==='center'?a.y+a.h/2:act==='top'?a.y:a.y+a.h;for(const v of s.arts){v.y=Math.max(0,Math.min(s.wallH-v.h,act==='center'?ref-v.h/2:act==='top'?ref:ref-v.h))}draw();return}if(act==='removePhoto'){const a=s.arts.find(z=>z.id===Number(b.dataset.id));if(a){delete a.photo;draw()}return}if(act==='points'){const a=art();if(a){const raw=b.dataset.id;a.points=raw==='rail'?'rail':Number(raw)}draw()}});
 root.addEventListener('keydown',e=>{if(e.target?.id!=='gap-direct-input')return;if(e.key==='Enter'){e.preventDefault();out.querySelector('[data-act=saveGap]')?.click();}else if(e.key==='Escape'){e.preventDefault();out.querySelector('[data-act=cancelGap]')?.click();}});
 root.addEventListener('input',e=>{const input=e.target.closest('input[data-key]');if(!input||s.tab!=='attach')return;const key=input.dataset.key;if(key!=='top'&&key!=='edge')return;const n=Number(input.value);if(input.value.trim()===''||!Number.isFinite(n)||n<0)return;const a=art();if(!a)return;a[key]=n;const svg=out.querySelector('#attach-schema');if(svg)svg.innerHTML=attachSchema(a);pwaSave()});
-root.addEventListener('change',e=>{if(e.target?.id==='wall-choice'){chooseWall(e.target.value);return;}const photoInput=e.target.closest('input[type="file"][data-photo]');if(photoInput){const file=photoInput.files?.[0];const id=Number(photoInput.dataset.photo);if(!file)return;if(!file.type.startsWith('image/')&&!/\.(heic|heif|jpg|jpeg|png|webp)$/i.test(file.name)){alert('Choisis une image.');return}const reader=new FileReader();reader.onload=()=>{const a=s.arts.find(z=>z.id===id);if(!a)return;const data=reader.result;const img=new Image();img.onload=()=>{try{const max=1200,scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(img.naturalWidth*scale));cv.height=Math.max(1,Math.round(img.naturalHeight*scale));const ctx=cv.getContext('2d');ctx.fillStyle='#f4f0e7';ctx.fillRect(0,0,cv.width,cv.height);ctx.drawImage(img,0,0,cv.width,cv.height);a.photo=cv.toDataURL('image/jpeg',0.85)}catch(e){a.photo=data}draw()};img.onerror=()=>{a.photo=data;draw()};img.src=data};reader.readAsDataURL(file);return}if(e.target.matches('input[name="centerScope"]')){s.centerScope=e.target.value;pwaSave();return}if(e.target.matches('input[name="bottomScope"]')){s.bottomScope=e.target.value;pwaSave();return}const input=e.target.closest('input[data-key]');if(!input)return;const key=input.dataset.key;if(key==='desiredGap'){const n=Number(input.value);if(input.value.trim()!==''&&Number.isFinite(n)&&n>=0)s.desiredGap=n;pwaSave();return}const n=Number(input.value);if(!Number.isFinite(n))return;if(s.tab==='attach'&&(key==='top'||key==='edge')){const a=art();if(a){a[key]=Math.max(0,n);if(key==='edge')a.edge=Math.min(a.edge,a.w/2);const svg=out.querySelector('#attach-schema');if(svg)svg.innerHTML=attachSchema(a);pwaSave()}return}if(key==='wallW'||key==='wallH'){s[key]=Math.max(50,n);for(const a of s.arts)cap(a)}else{const a=art();if(!a)return;a[key]=['w','h'].includes(key)?Math.max(1,n):Math.max(0,n);cap(a)}draw()});pwaStart();
+root.addEventListener('change',e=>{if(e.target?.id==='wall-choice'){chooseWall(e.target.value);return;}const refInput=e.target.closest('input[type="file"][data-import-plan]');if(refInput){importPlanFile(refInput.files?.[0],refInput.dataset.importPlan);return;}const photoInput=e.target.closest('input[type="file"][data-photo]');if(photoInput){const file=photoInput.files?.[0];const id=Number(photoInput.dataset.photo);if(!file)return;if(!file.type.startsWith('image/')&&!/\.(heic|heif|jpg|jpeg|png|webp)$/i.test(file.name)){alert('Choisis une image.');return}const reader=new FileReader();reader.onload=()=>{const a=s.arts.find(z=>z.id===id);if(!a)return;const data=reader.result;const img=new Image();img.onload=()=>{try{const max=1200,scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(img.naturalWidth*scale));cv.height=Math.max(1,Math.round(img.naturalHeight*scale));const ctx=cv.getContext('2d');ctx.fillStyle='#f4f0e7';ctx.fillRect(0,0,cv.width,cv.height);ctx.drawImage(img,0,0,cv.width,cv.height);a.photo=cv.toDataURL('image/jpeg',0.85)}catch(e){a.photo=data}draw()};img.onerror=()=>{a.photo=data;draw()};img.src=data};reader.readAsDataURL(file);return}if(e.target.matches('input[name="centerScope"]')){s.centerScope=e.target.value;pwaSave();return}if(e.target.matches('input[name="bottomScope"]')){s.bottomScope=e.target.value;pwaSave();return}const input=e.target.closest('input[data-key]');if(!input)return;const key=input.dataset.key;if(key==='desiredGap'){const n=Number(input.value);if(input.value.trim()!==''&&Number.isFinite(n)&&n>=0)s.desiredGap=n;pwaSave();return}const n=Number(input.value);if(!Number.isFinite(n))return;if(s.tab==='attach'&&(key==='top'||key==='edge')){const a=art();if(a){a[key]=Math.max(0,n);if(key==='edge')a.edge=Math.min(a.edge,a.w/2);const svg=out.querySelector('#attach-schema');if(svg)svg.innerHTML=attachSchema(a);pwaSave()}return}if(key==='wallW'||key==='wallH'){s[key]=Math.max(50,n);for(const a of s.arts)cap(a)}else{const a=art();if(!a)return;a[key]=['w','h'].includes(key)?Math.max(1,n):Math.max(0,n);cap(a)}draw()});pwaStart();
 })();
 </script></body></html>
