@@ -143,6 +143,21 @@ body{background:#f8f2e8!important;color:#183150!important}
 .axg .plan-actions .btn{white-space:normal}
 @media(max-width:390px){.axg .drill-points{gap:7px}.axg .drill-points .drill-point{padding:8px}.axg .drill-points .drill-point strong{font-size:18px}}
 .axg .site-step{display:flex;gap:10px;align-items:flex-start;border-top:1px solid #dbe5ed;padding:9px 0;font-size:12px}.axg .site-step:first-child{border-top:0}.axg .site-number{display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:50%;width:24px;height:24px;background:#e2f1ed;color:#146654;font-weight:800}.axg .site-step strong{color:#244461}.axg .site-step small{display:block;color:#647891;margin-top:3px;line-height:1.35}
+
+/* Export PDF iPhone : conserver une sortie fiable et un vrai PDF à partager. */
+#ridfou-export-dialog{position:fixed;inset:0;z-index:999999;display:flex;flex-direction:column;background:#f8f2e8;color:#20314a;font-family:system-ui,-apple-system,sans-serif;overflow:hidden;overscroll-behavior:contain}
+#ridfou-export-dialog *{box-sizing:border-box}
+#ridfou-export-dialog button{font:inherit;font-weight:650;cursor:pointer;border:1px solid #b7cbdc;border-radius:10px;background:#fff;color:#234260;padding:11px 12px;min-height:43px}
+#ridfou-export-dialog .ridfou-export-toolbar{background:#f8f2e8;border-bottom:1px solid #c8d8e7;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 9px}
+#ridfou-export-dialog .ridfou-export-toolbar strong{font-size:13px}
+#ridfou-export-dialog .ridfou-export-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px 12px 0}
+#ridfou-export-dialog .ridfou-export-actions .ridfou-export-primary{background:#2563eb;color:#fff;border-color:#2563eb}
+#ridfou-export-dialog .ridfou-export-help{font-size:12px;color:#577087;margin:8px 14px;line-height:1.4}
+#ridfou-export-dialog .ridfou-export-framebox{padding:0 12px 12px;flex:1;min-height:0}
+#ridfou-export-dialog iframe{height:100%;width:100%;border:1px solid #c6d4df;border-radius:11px;background:#fff}
+#ridfou-export-dialog .ridfou-export-bottom{display:flex;padding:8px 12px calc(12px + env(safe-area-inset-bottom,0px));justify-content:center}
+#ridfou-export-dialog .ridfou-export-bottom button{width:100%}
+@media(max-width:370px){#ridfou-export-dialog .ridfou-export-toolbar strong{font-size:11px}#ridfou-export-dialog button{font-size:12px}}
 </style></head><body>
 <div id="acc-expo-height" class="axg">
 <div class="bar"><div class="brand">▣ Ridfou Expo</div><span class="tag">Ridfou Expo</span></div>
@@ -767,14 +782,287 @@ function printDocument(walls){
  @media print{body{background:white}nav{display:none}.page{margin:0;padding:0;max-width:none;min-height:unset}.page:last-child{page-break-after:auto}thead{display:table-header-group}tr{break-inside:avoid}.drawing svg{max-height:215px}.heights td,.route td{padding:3px 6px}.heights .subinfo,.route .subinfo{display:inline;margin:0 0 0 5px}.warning{margin-top:6px}}
  </style></head><body><nav><div><strong>Plan coté Ridfou Expo · De trou à trou</strong><br>Dans Safari, utilise Imprimer puis Enregistrer en PDF.</div><button onclick="window.print()">Imprimer / PDF</button></nav>${pages}</body></html>`;
 }
-function exportPdf(all){
- syncActiveWall();
- const walls=all?s.walls:s.walls.filter(w=>w.id===s.currentWallId);
- // Sur iPhone, ouvrir pendant le clic pour autoriser la nouvelle fenêtre.
- const popup=window.open('','_blank');
- if(!popup){alert('L’ouverture du plan a été bloquée. Ouvre Ridfou Expo dans Safari, puis réessaie.');return;}
- popup.document.open();popup.document.write(printDocument(walls));popup.document.close();
+// Export PDF autonome : fonctionne sans API distante et sans popup bloquante.
+// Les mêmes données de mur et les fonctions de perçage existantes sont utilisées.
+let ridfouExportDialog = null;
+const RIDFOU_PDF_W = 841.89, RIDFOU_PDF_H = 595.28;
+function ridfouMakePdf(walls){
+  const pages=[];
+  const ink=[0.12,0.20,0.29], muted=[0.37,0.46,0.56], blue=[0.13,0.37,0.63];
+  const red=[0.70,0.20,0.25], green=[0.12,0.42,0.36], pale=[0.92,0.95,0.98];
+  const fixed=n=>Number(n.toFixed(2)).toString();
+  const color=c=>c.map(fixed).join(' ');
+  const normalized=t=>String(t??'')
+   .replace(/[\r\n\t]+/g,' ').replace(/[–—]/g,'-').replace(/→/g,'->').replace(/←/g,'<-')
+   .replace(/↔/g,'<->').replace(/↑/g,'^').replace(/↓/g,'v').replace(/×/g,'x').replace(/✓/g,'OK')
+   .replace(/\u202f/g,' ').replace(/\u00a0/g,' ');
+  const winAnsiExtra={'€':128,'‚':130,'ƒ':131,'„':132,'…':133,'†':134,'‡':135,'ˆ':136,'‰':137,'Š':138,'‹':139,'Œ':140,'Ž':142,'‘':145,'’':146,'“':147,'”':148,'•':149,'˜':152,'™':153,'š':154,'›':155,'œ':156,'ž':158,'Ÿ':159};
+  const pdfEscape=t=>{
+    let result='';
+    for(const ch of normalized(t)){
+      const cp=ch.codePointAt(0);const b=cp<=127?cp:cp>=160&&cp<=255?cp:winAnsiExtra[ch];
+      if(b===undefined||b<32){result+='?';continue}
+      if(b===40||b===41||b===92)result+='\\'+String.fromCharCode(b);
+      else if(b>127)result+='\\'+b.toString(8).padStart(3,'0');
+      else result+=String.fromCharCode(b);
+    }
+    return result;
+  };
+  const roughly=(t,size)=>normalized(t).length*size*.49;
+  const wrap=(t,maxW,size)=>{
+    const words=normalized(t).split(/\s+/).filter(Boolean),lines=[];let cur='';
+    for(const word of words){
+      const candidate=cur?cur+' '+word:word;
+      if(roughly(candidate,size)<=maxW){cur=candidate;continue}
+      if(cur){lines.push(cur);cur=''}
+      if(roughly(word,size)>maxW){
+        const slice=Math.max(3,Math.floor(maxW/(size*.49)));
+        for(let pos=0;pos<word.length-slice;pos+=slice)lines.push(word.slice(pos,pos+slice));
+        cur=word.slice(Math.floor((word.length-1)/slice)*slice);
+      }else cur=word;
+    }
+    if(cur)lines.push(cur);
+    return lines.length?lines:[''];
+  };
+  let commands=[];
+  const page=()=>{if(commands.length)pages.push(commands.join('\n')+'\n');commands=[];};
+  const line=(x1,y1,x2,y2,c=muted,width=.7)=>commands.push(`${color(c)} RG ${fixed(width)} w ${fixed(x1)} ${fixed(y1)} m ${fixed(x2)} ${fixed(y2)} l S`);
+  const rect=(x,y,w,h,fill=[1,1,1],stroke=null,sw=.7)=>commands.push(`${color(fill)} rg ${stroke?color(stroke)+' RG '+fixed(sw)+' w ':''}${fixed(x)} ${fixed(y)} ${fixed(w)} ${fixed(h)} re ${stroke?'B':'f'}`);
+  const txt=(x,y,t,size=10,bold=false,c=ink)=>commands.push(`${color(c)} rg BT /${bold?'F2':'F1'} ${fixed(size)} Tf 1 0 0 1 ${fixed(x)} ${fixed(y)} Tm (${pdfEscape(t)}) Tj ET`);
+  const multi=(x,y,t,maxW,size=9,bold=false,c=ink,leading=size*1.23,limit=99)=>{
+    const rows=wrap(t,maxW,size).slice(0,limit);rows.forEach((text,i)=>txt(x,y-i*leading,text,size,bold,c));return rows.length;
+  };
+  const footer=(text,pageNo)=>{line(42,38,800,38,[.82,.86,.89]);txt(42,25,text,8,false,muted);txt(774,25,String(pageNo),8,false,muted);};
+  const fmtPdf=n=>Number.isFinite(Number(n))?f(Number(n)):'A relever';
+  const cm=n=>`${fmtPdf(n)} cm`;
+  let pageNo=0;
+  function title(w,label){
+    txt(42,553,`Ridfou Expo - ${w.name}`,18,true,ink);
+    txt(42,535,label,10,false,muted);
+    txt(42,520,`Mur ${cm(w.wallW)} de large x ${cm(w.wallH)} de haut`,10,true,green);
+  }
+  function drawPlan(w){
+    const W=Math.max(1,Number(w.wallW)||600),H=Math.max(1,Number(w.wallH)||300);
+    const arts=[...(w.arts||[])].sort((a,b)=>a.x-b.x);
+    const sc=Math.min(715/W,163/H), ww=W*sc,hh=H*sc;
+    const x0=44+(750-ww)/2,y0=326+(172-hh)/2;
+    rect(x0,y0,ww,hh,[1,1,1],[.49,.57,.60],1.0);
+    line(x0+ww/2,y0,x0+ww/2,y0+hh,[.80,.84,.85],.45);
+    const gap=[];let edge=0;
+    for(const a of arts){gap.push([a.x-edge,edge,a.x]);edge=a.x+a.w;}
+    gap.push([W-edge,edge,W]);
+    arts.forEach((a,i)=>{
+      const x=x0+Number(a.x)*sc, y=y0+(H-Number(a.y)-Number(a.h))*sc;
+      const aw=Math.max(1.2,Number(a.w)*sc),ah=Math.max(1.2,Number(a.h)*sc);
+      rect(x,y,aw,ah,[.94,.90,.83],[.30,.33,.32],1.2);
+      const ps=fixingPoints(a);
+      ps.forEach(p=>{
+        const px=x0+p.x*sc;const ofs=p.offset===null?Math.max(4,Number(a.top)||5):Number(p.offset);
+        const py=y0+(H-Number(a.y)-ofs)*sc;
+        if(px<x0-1||px>x0+ww+1)return;
+        line(px-2.3,py,px+2.3,py,red,1.1);line(px,py-2.3,px,py+2.3,red,1.1);
+      });
+      const name=normalized(a.name);
+      const shrink=Math.min(8, Math.max(5.3,aw/Math.max(5,name.length*.52)));
+      txt(x+Math.max(1,(aw-roughly(name,shrink))/2),Math.max(y0+1,y-10),name,shrink,false,blue);
+    });
+    for(const [g,start,end] of gap){
+      const xx=x0+(Number(start)+Number(end))*sc/2,label=fmtPdf(g);
+      txt(xx-roughly(label,7)/2,y0-16,label,7,false,green);
+    }
+    txt(44,309,'Espacements en cm - de gauche a droite',8,false,muted);
+    txt(613,309,'Points de fixation : croix rouges',8,false,red);
+  }
+  function heights(w){
+    const rows=[...(w.arts||[])].sort((a,b)=>a.x-b.x).map(a=>{
+      const ps=fixingPoints(a),ph=ps.find(p=>p.position==='haut'),pb=ps.find(p=>p.position==='bas');
+      const mid=(Number(w.wallH)||300)-Number(a.y)-Number(a.h)/2;
+      return [a.name, `${fmtPdf(a.w)} x ${fmtPdf(a.h)}`,cm(mid),ph&&plannedHeight(w.wallH,a,ph)!==null?cm(plannedHeight(w.wallH,a,ph)):'A relever',pb?plannedHeight(w.wallH,a,pb)!==null?cm(plannedHeight(w.wallH,a,pb)):'A relever':'-'];
+    });
+    let pos=287,index=0;
+    const col=[44,350,492,635,797];
+    function tableHeader(y){
+      txt(44,y,'Hauteurs depuis le sol (issues du plan, a confirmer)',11,true,ink);
+      const base=y-25;rect(44,base-2,753,21,pale,[.78,.83,.88]);
+      ['Oeuvre (L x H)','Milieu','Vis haute','Vis basse'].forEach((t,i)=>txt(col[i]+6,base+4,t,9,true,ink));
+      [col[1],col[2],col[3]].forEach(v=>line(v,base-2,v,base+19,[.77,.83,.89]));
+      return base-2;
+    }
+    let top=tableHeader(pos),bottom=top;
+    if(!rows.length){bottom-=29;txt(52,bottom+10,'Aucune oeuvre sur ce mur',9,false,muted);}
+    for(const row of rows){
+      if(bottom-26<76){footer('Cotes indicatives - verifier sur chantier',++pageNo);page();title(w,'Suite : hauteurs des oeuvres');top=tableHeader(483);bottom=top;}
+      rect(44,bottom-27,753,27,[1,1,1],[.78,.83,.88],.5);
+      [col[1],col[2],col[3]].forEach(v=>line(v,bottom-27,v,bottom,[.78,.83,.88],.5));
+      txt(50,bottom-11,row[0],8.8,true,ink);
+      txt(50,bottom-22,row[1]+' cm',7.4,false,muted);
+      txt(col[1]+6,bottom-15,row[2],9,false,ink);
+      txt(col[2]+6,bottom-15,row[3],9,false,ink);
+      txt(col[3]+6,bottom-15,row[4],9,false,ink);
+      bottom-=27;
+    }
+    if(bottom>65){
+      multi(44,Math.max(54,bottom-17),'Attention : ces hauteurs proviennent du plan numerique. Elles ne sont pas une mesure confirmee sur chantier.',750,8,false,[.56,.33,.19]);
+    }
+  }
+  function routePages(w){
+    const route=drillingRoute(w);
+    if(!route.length)return;
+    let k=0;
+    const cols=[44,76,199,407,551,672,797],widths=cols.slice(1).map((v,i)=>v-cols[i]);
+    while(k<route.length){
+      title(w,'Parcours de percage - chaque mesure depuis le dernier point');
+      multi(44,498,'Commencer par le 1er point depuis le bord gauche ; ensuite, toujours partir du dernier trou perce. Horizontal prioritaire. Toutes les distances sont en cm.',751,9,false,muted);
+      const th=451;
+      rect(44,th,753,35,pale,[.75,.82,.89],.6);
+      const labels=['No','Oeuvre / point','Deplacement horizontal','Deplacement vertical','Controle X\ndepuis gauche','Hauteur du point\ndepuis sol'];
+      labels.forEach((lab,i)=>{
+        lab.split('\n').forEach((s,j)=>txt(cols[i]+5,th+22-j*10,s,8.5,true,ink));
+        if(i)line(cols[i],th,cols[i],th+35,[.75,.82,.89]);
+      });
+      let yy=th;
+      while(k<route.length){
+        const r=route[k];
+        const vals=[String(r.n),`${r.a.name} / ${r.point.name}`,horizontalInstruction(r),verticalInstruction(r),cm(r.x),r.y===null?'A relever':cm(r.y)+' (plan)'];
+        const lineHeight=10.5;
+        const wraps=vals.map((t,i)=>wrap(t,widths[i]-10,8.2));
+        const rowH=Math.max(31,Math.max(...wraps.map(x=>x.length))*lineHeight+9);
+        if(yy-rowH<72)break;
+        rect(44,yy-rowH,753,rowH,k%2===0?[1,1,1]:[.985,.990,.996],[.76,.82,.88],.55);
+        vals.forEach((t,i)=>{
+          if(i>0)line(cols[i],yy-rowH,cols[i],yy,[.76,.82,.88],.45);
+          wraps[i].forEach((ln,j)=>txt(cols[i]+5,yy-12-j*lineHeight,ln,8.2,i===0||i===2,i===2?blue:ink));
+        });
+        yy-=rowH;k++;
+      }
+      txt(44,55,'Verifier chaque cote avant perçage. Les hauteurs sont facultatives et issues du plan.',8,false,[.56,.33,.19]);
+      footer('Ridfou Expo | Mode chantier | De trou a trou | Toutes les cotes en cm',++pageNo);
+      page();
+    }
+  }
+  for(const w of walls){
+    title(w,'Plan cote - elevation de face');
+    drawPlan(w);
+    heights(w);
+    footer('Ridfou Expo | Plan de preparation | Hauteurs indicatives, a verifier',++pageNo);
+    page();
+    routePages(w);
+  }
+  if(!pages.length){txt(50,530,'Ridfou Expo - aucun mur a exporter',18,true);page()}
+  const objects=['',null,null,`<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>`,`<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>`];
+  // References fixes : 1 Catalog ; 2 Pages ; 3,4 Fonts ; (content, page) pour chaque page.
+  const kids=[];
+  pages.forEach((stream,i)=>{
+    const contentN=5+2*i,pageN=contentN+1;
+    objects[contentN]=`<< /Length ${stream.length} >>\nstream\n${stream}endstream`;
+    objects[pageN]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${RIDFOU_PDF_W} ${RIDFOU_PDF_H}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentN} 0 R >>`;
+    kids.push(`${pageN} 0 R`);
+  });
+  objects[1]='<< /Type /Catalog /Pages 2 0 R >>';
+  objects[2]=`<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${kids.length} >>`;
+  let binary='%PDF-1.4\n%RIDFOU\n';
+  const offsets=[0];
+  for(let i=1;i<objects.length;i++){
+    offsets[i]=binary.length;
+    binary+=`${i} 0 obj\n${objects[i]}\nendobj\n`;
+  }
+  const start=binary.length;
+  binary+=`xref\n0 ${objects.length}\n0000000000 65535 f \n`;
+  for(let i=1;i<objects.length;i++)binary+=`${String(offsets[i]).padStart(10,'0')} 00000 n \n`;
+  binary+=`trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${start}\n%%EOF`;
+  return new Blob([new TextEncoder().encode(binary)],{type:'application/pdf'});
 }
+function ridfouPdfFilename(walls){
+  const name=walls.length===1?String(walls[0]?.name||'Mur'):'Tous-les-murs';
+  return 'Ridfou-Expo-'+name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9_-]+/g,'-')+'.pdf';
+}
+function ridfouClosePdfDialog(){
+  if(!ridfouExportDialog)return;
+  const overlay=ridfouExportDialog.overlay;
+  overlay.remove();
+  document.body.style.removeProperty('--ridfou-export-is-open');
+  if(ridfouExportDialog.url)URL.revokeObjectURL(ridfouExportDialog.url);
+  const focusTarget=ridfouExportDialog.focusTarget;
+  ridfouExportDialog=null;
+  if(focusTarget&&focusTarget.isConnected)focusTarget.focus();
+}
+function ridfouDownloadPdf(){
+  const state=ridfouExportDialog;if(!state)return;
+  // Sur iPhone/iPad installé en PWA, privilégier la feuille de partage native :
+  // elle permet d'enregistrer dans Fichiers sans dépendre du téléchargement d'un blob.
+  const isiOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||
+    (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(isiOS&&navigator.share&&navigator.canShare){
+    const file=new File([state.blob],state.filename,{type:'application/pdf'});
+    if(navigator.canShare({files:[file]})){ridfouSharePdf();return;}
+  }
+  const anchor=document.createElement('a');anchor.href=state.url;anchor.download=state.filename;
+  anchor.style.display='none';document.body.appendChild(anchor);anchor.click();anchor.remove();
+  const hint=state.overlay.querySelector('.ridfou-export-help');
+  if(hint)hint.textContent="Si le téléchargement ne s'affiche pas, utilise « Partager / Imprimer », puis « Enregistrer dans Fichiers ».";
+}
+async function ridfouSharePdf(){
+  const state=ridfouExportDialog;if(!state)return;
+  const hint=state.overlay.querySelector('.ridfou-export-help');
+  const file=new File([state.blob],state.filename,{type:'application/pdf'});
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({files:[file],title:'Ridfou Expo - Plan cote'});
+    }catch(e){
+      if(e?.name!=='AbortError'&&hint)hint.textContent="Le partage a échoué. Essaye « Enregistrer PDF » ou ouvre le site dans Safari.";
+    }
+  }else if(hint){
+    hint.textContent="Le partage de fichiers n'est pas disponible ici. Appuie sur « Enregistrer PDF » ; si besoin ouvre Ridfou Expo dans Safari.";
+  }
+}
+function exportPdf(all){
+  syncActiveWall();
+  const walls=all?s.walls:s.walls.filter(w=>w.id===s.currentWallId);
+  if(!walls.length){alert('Aucun mur disponible.');return;}
+  ridfouClosePdfDialog();
+  let blob;
+  try{blob=ridfouMakePdf(walls);}catch(e){console.error('Export PDF impossible',e);alert('Impossible de créer le PDF. Les données sont conservées.');return;}
+  const filename=ridfouPdfFilename(walls);
+  const url=URL.createObjectURL(blob);
+  const overlay=document.createElement('div');
+  overlay.id='ridfou-export-dialog';
+  overlay.setAttribute('role','dialog');
+  overlay.setAttribute('aria-modal','true');
+  overlay.setAttribute('aria-label','Exporter le plan coté de Ridfou Expo');
+  overlay.innerHTML=`<div class="ridfou-export-toolbar"><button type="button" class="ridfou-export-back" data-pdf-action="close">← Retour à Ridfou Expo</button><strong>Plan coté · PDF</strong></div>
+    <div class="ridfou-export-actions"><button type="button" class="ridfou-export-primary" data-pdf-action="share">Partager / Imprimer</button><button type="button" data-pdf-action="download">Enregistrer PDF</button></div>
+    <p class="ridfou-export-help">Sur iPhone, « Partager / Imprimer » ouvre les options « Enregistrer dans Fichiers » et « Imprimer ».</p>
+    <div class="ridfou-export-framebox"><iframe title="Aperçu du plan coté" loading="eager"></iframe></div>
+    <div class="ridfou-export-bottom"><button type="button" data-pdf-action="close">← Retour à mon exposition</button></div>`;
+  const focusTarget=document.activeElement;
+  document.body.appendChild(overlay);
+  document.body.style.setProperty('--ridfou-export-is-open','1');
+  ridfouExportDialog={overlay,blob,filename,url,focusTarget};
+  // L'aperçu reste dans Ridfou Expo : aucun nouvel onglet ni fenêtre sans navigation.
+  const frame=overlay.querySelector('iframe');
+  const preview=printDocument(walls).replace(/<nav>[\s\S]*?<\/nav>/,'');
+  frame.addEventListener('load',()=>{
+    // Ajuster l'aperçu paysage à la largeur d'un iPhone, sans tronquer les cotes.
+    try{
+      const inner=frame.contentDocument;
+      if(!inner)return;
+      const scale=Math.min(1,Math.max(.25,(frame.clientWidth-24)/1060));
+      inner.body.style.width='1060px';
+      inner.body.style.zoom=String(scale);
+      inner.body.style.margin='0';
+      inner.querySelectorAll('.page').forEach(p=>{p.style.width='1030px';p.style.maxWidth='none';p.style.margin='12px auto';});
+    }catch(_){/* L'aperçu n'affecte pas l'export du PDF. */}
+  });
+  frame.srcdoc=preview.replace('</style>','nav{display:none!important}body{background:#f7f4ec}.page{width:100%;max-width:1100px} @media(max-width:800px){.page{min-width:850px}}</style>');
+  overlay.querySelectorAll('[data-pdf-action]').forEach(b=>b.addEventListener('click',e=>{
+    const op=b.dataset.pdfAction;
+    if(op==='close')ridfouClosePdfDialog();
+    else if(op==='download')ridfouDownloadPdf();
+    else if(op==='share')ridfouSharePdf();
+  }));
+  const back=overlay.querySelector('.ridfou-export-back');if(back)back.focus();
+}
+
 function applyDirectGap(index, wanted){
   const {aa,gaps}=layout();
   if(!aa.length||!Number.isInteger(index)||index<0||index>=gaps.length)return 'Aucun écart à modifier.';
