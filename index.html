@@ -125,6 +125,18 @@ body{background:#f8f2e8!important;color:#183150!important}
 .axg .art-fix{position:absolute;z-index:8;display:flex;align-items:center;justify-content:center;width:12px;height:12px;transform:translate(-50%,-50%);border-radius:50%;border:1.5px solid #fff;background:#ce3c48;color:#fff;font-size:12px;font-weight:850;line-height:1;box-shadow:0 0 0 1px #b22e3c;pointer-events:none}
 .axg .art-fix.unconfirmed{background:#f9f5e5;border:2px dashed #b8752f;box-shadow:none;color:#99571a}
 .axg .drill-help{font-size:11px;color:var(--mut);line-height:1.5;margin:5px 0}
+.axg .art-cleat{position:absolute;z-index:6;box-sizing:border-box;border:1.5px dashed #2b62a6;background:rgba(80,120,170,.20);pointer-events:none}
+.axg .rail-panel{margin:12px 0 4px;padding:11px;border:1px solid #c9d8e6;border-radius:12px;background:#f6f9fc}
+.axg .rail-panel>strong{display:block;font-size:13px;color:#254e72;margin-bottom:3px}
+.axg .rail-panel .row{margin-top:9px}
+.axg .rail-panel .hint{margin:7px 0 0}
+.axg .rail-need label{color:#8a5a12}
+.axg .rail-need input{border-color:#d3a45b!important;background:#fffaf0!important}
+.axg .rail-summary{margin-top:10px;padding:9px 10px;border-radius:9px;background:#fff;border:1px solid #d5e1ec;font-size:12.5px;line-height:1.55;color:#2d4358}
+.axg .rail-summary b{color:#165e9b}
+.axg .rail-legend{font-size:11.5px;color:#586d82;line-height:1.5;margin-top:4px}
+.axg .rail-legend i{display:inline-block;width:14px;height:8px;margin:0 3px 0 6px;vertical-align:-1px;border:1.5px solid #6b777c;background:#c9cfd1;box-sizing:border-box}
+.axg .rail-legend i.wall{border:1.5px dashed #2b62a6;background:rgba(80,120,170,.2)}
 .axg .drill-points{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:10px 0}
 .axg .drill-points .drill-point{min-width:0}
 .axg .drill-points .drill-point .small{margin-bottom:5px}
@@ -315,6 +327,7 @@ function pwaStart(){
   if(prev&&typeof prev==='object'&&Array.isArray(prev.arts)&&Number.isFinite(prev.wallW)&&Number.isFinite(prev.wallH)){
    const allowed=['showFixings','wallW','wallH','desiredGap','gapOpen','heightOpen','centerOpen','centerHeight','centerScope','bottomOpen','bottomHeight','bottomScope','selected','arts','importedPlan'];
    for(const key of allowed){if(Object.prototype.hasOwnProperty.call(prev,key))s[key]=prev[key]}
+   s.cleat=cleanCleat(prev.cleat);
    if(!s.arts.some(a=>a.id===s.selected))s.selected=s.arts[0]?.id??null;
    if(Array.isArray(prev.walls)&&prev.walls.length){
     s.walls=prev.walls.filter(w=>w&&w.id&&Array.isArray(w.arts)&&Number.isFinite(w.wallW)&&Number.isFinite(w.wallH));
@@ -335,7 +348,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostn
  window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{})});
 }
 
-const s={walls:[],currentWallId:'A',tab:'plan',wallW:600,wallH:300,desiredGap:10,gapOpen:false,heightOpen:false,centerOpen:false,centerHeight:150,centerScope:'all',bottomOpen:false,bottomHeight:110,bottomScope:'one',showFixings:true,siteMode:false,selected:1,deleteId:null,importedPlan:null,arts:[
+const s={walls:[],currentWallId:'A',tab:'plan',wallW:600,wallH:300,desiredGap:10,gapOpen:false,heightOpen:false,centerOpen:false,centerHeight:150,centerScope:'all',bottomOpen:false,bottomHeight:110,bottomScope:'one',showFixings:true,siteMode:false,selected:1,deleteId:null,importedPlan:null,cleat:{h:5,end:5,gap:40,d:''},arts:[
 {id:1,name:'Œuvre 1',w:65,h:95,x:70,y:92,edge:12,top:8,points:2},
 {id:2,name:'Œuvre 2',w:100,h:135,x:210,y:71,edge:15,top:10,points:2},
 {id:3,name:'Œuvre 3',w:65,h:95,x:390,y:92,edge:12,top:8,points:2}
@@ -637,7 +650,31 @@ const f=n=>Number(Number(n).toFixed(1)).toLocaleString('fr-FR',{maximumFractionD
 // Valeur à mettre dans un <input type=number> : séparateur décimal « . » et aucun séparateur de milliers.
 const fv=n=>String(Number(Number(n).toFixed(1)));
 const art=()=>s.arts.find(a=>a.id===s.selected)||s.arts[0];
-const heightsFromPlan=a=>({vis:s.wallH-a.y-a.top,mid:s.wallH-a.y-a.h/2});
+// Rail = deux tasseaux qui s'emboîtent : l'un au dos de l'œuvre, l'autre fixé au mur par vous.
+// a.top  = du haut de l'œuvre au haut de SON tasseau ; a.edge = du bord latéral de l'œuvre au bout du tasseau.
+// s.cleat.d = de combien le haut du tasseau MURAL est plus bas que celui de l'œuvre, une fois emboîtés (à mesurer une fois).
+function cleatCfg(){
+ const c=s.cleat||{},num=(v,fb)=>v===''||v===null||v===undefined||!Number.isFinite(Number(v))?fb:Number(v);
+ return {h:Math.max(.5,num(c.h,5)),end:Math.max(0,num(c.end,5)),gap:Math.max(5,num(c.gap,40)),d:num(c.d,null)};
+}
+function cleatGeom(a){
+ const c=cleatCfg(),w=Math.max(1,Number(a.w)||1);
+ const edge=Math.max(0,Math.min(w/2,Number(a.edge)||0));
+ const x1=Number(a.x)+edge,x2=Number(a.x)+w-edge,L=Math.max(0,x2-x1);
+ const top=Math.max(0,Number.isFinite(Number(a.top))?Number(a.top):0);
+ const wallTopOffset=c.d===null?null:top+c.d;                    // haut du tasseau mural, depuis le haut de l'œuvre
+ const screwOffset=wallTopOffset===null?null:wallTopOffset+c.h/2; // axe des vis (milieu de la hauteur du tasseau)
+ const end=Math.min(c.end,L/2),span=L-2*end;
+ const n=span<=0.0001?1:Math.max(2,Math.ceil(span/c.gap-1e-9)+1);
+ const xs=n===1?[x1+L/2]:Array.from({length:n},(_,i)=>x1+end+span*i/(n-1));
+ return {c,x1,x2,L,top,wallTopOffset,screwOffset,n,xs,spacing:n>1?span/(n-1):0};
+}
+const heightsFromPlan=a=>{
+ if(a.points==='rail'){const g=cleatGeom(a);return {vis:g.screwOffset===null?null:s.wallH-a.y-g.screwOffset,cleatTop:g.wallTopOffset===null?null:s.wallH-a.y-g.wallTopOffset,mid:s.wallH-a.y-a.h/2}}
+ return {vis:s.wallH-a.y-a.top,mid:s.wallH-a.y-a.h/2};
+};
+// Décalage vertical (depuis le haut de l'œuvre) servant à placer le repère des vis sur le plan.
+const fixOff=a=>{if(a.points==='rail'){const g=cleatGeom(a);return g.screwOffset===null?g.top:g.screwOffset}return a.top};
 // Chaque point est calculé à partir du cadre : distances en cm.
 // Quatre points = deux colonnes gauche/droite, deux rangées haute/basse.
 // En l'absence de cote du bas, la seconde rangée reste explicitement indéterminée.
@@ -654,6 +691,7 @@ function fixingPoints(a){
   const bottom=bottomRaw!==''&&bottomRaw!==null&&bottomRaw!==undefined&&Number.isFinite(Number(bottomRaw))&&Number(bottomRaw)>=0&&Number(bottomRaw)<=h?h-Number(bottomRaw):null;
   return [point('Haut gauche',l,top,'haut'),point('Haut droit',r,top,'haut'),point('Bas gauche',l,bottom,'bas'),point('Bas droit',r,bottom,'bas')];
  }
+ if(a.points==='rail'){const g=cleatGeom(a);return g.xs.map((x,i)=>point('Vis '+(i+1),x,g.screwOffset,'haut'))}
  return [point('Point 1',l,top,'haut'),point('Point 2',r,top,'haut')];
 }
 const holeXs=a=>[...new Set(fixingPoints(a).map(p=>p.x))];
@@ -664,12 +702,19 @@ function fixWarnings(a){
   else if(Number(a.bottomOffset)<0||Number(a.bottomOffset)>a.h)messages.push('La distance des attaches basses doit rester dans la hauteur du cadre.');
   else if(Number(a.top)>=a.h-Number(a.bottomOffset))messages.push('Vérifie les positions des rangées : les points hauts et bas se rejoignent ou se croisent.');
  }
- if(a.points==='rail')messages.push('Rail : les deux positions affichées sont indicatives ; vérifier les points de fixation réels du rail.');
+ if(a.points==='rail'){
+  const g=cleatGeom(a);
+  if(g.c.d===null)messages.push('Rail : indique dans « Réglages du rail » de combien le tasseau mural est plus bas que celui de l’œuvre une fois emboîtés. Sans cela, les hauteurs de perçage restent à confirmer.');
+  if(g.L<=0.0001)messages.push('Rail : le tasseau n’a plus de longueur. Réduis la distance du bord latéral au bout du tasseau.');
+  if(g.top+g.c.h>a.h)messages.push('Rail : le tasseau (haut à '+f(g.top)+' cm, hauteur '+f(g.c.h)+' cm) dépasse le bas de l’œuvre.');
+ }
  return messages;
 }
 function fixingMarkup(a){
  if(s.showFixings===false)return '';
- return fixingPoints(a).map((p,i)=>{
+ let bar='';
+ if(a.points==='rail'){const g=cleatGeom(a);if(g.wallTopOffset!==null)bar=`<span class="art-cleat" style="left:${(g.x1-a.x)/a.w*100}%;top:${g.wallTopOffset/a.h*100}%;width:${g.L/a.w*100}%;height:${g.c.h/a.h*100}%" aria-hidden="true" title="Tasseau mural"></span>`}
+ return bar+fixingPoints(a).map((p,i)=>{
   const x=((p.x-a.x)/a.w)*100;
   const y=p.offset===null?(p.position==='bas'?83:14):p.offset/a.h*100;
   return `<span class="art-fix ${p.offset===null?'unconfirmed':''}" style="left:${x}%;top:${y}%" aria-hidden="true" title="${safeText(p.name)}">${p.offset===null?'?':'+'}</span>`;
@@ -687,16 +732,16 @@ function gapLabel(i,total){return i===0?'Gauche':i===total-1?'Droite':'Écart '+
 function layout(){const aa=[...s.arts].sort((a,b)=>a.x-b.x);let x=0,gaps=[];for(const a of aa){gaps.push({n:a.x-x});x=a.x+a.w}gaps.push({n:s.wallW-x});return{aa,gaps}}
 function heightMargin(){
  const a=art();if(!a||!s.heightOpen)return '';
- const visY=(a.y+a.top)/s.wallH*100, centerY=(a.y+a.h/2)/s.wallH*100;
+ const visY=(a.y+fixOff(a))/s.wallH*100, centerY=(a.y+a.h/2)/s.wallH*100;
  const {vis:visFloor,mid:centerFloor}=heightsFromPlan(a);
- return `<aside class="height-margin" aria-label="Hauteurs depuis le sol"><div class="h-ruler" style="top:${visY}%"></div><div class="h-center-tick" style="top:${centerY}%"></div><div class="h-note red" style="top:${visY}%">Vis<strong>${f(visFloor)} cm</strong></div><div class="h-note gray" style="top:${centerY}%">Milieu<strong>${f(centerFloor)} cm</strong></div></aside>`;
+ return `<aside class="height-margin" aria-label="Hauteurs depuis le sol"><div class="h-ruler" style="top:${visY}%"></div><div class="h-center-tick" style="top:${centerY}%"></div><div class="h-note red" style="top:${visY}%">Vis<strong>${visFloor===null?'? cm':f(visFloor)+' cm'}</strong></div><div class="h-note gray" style="top:${centerY}%">Milieu<strong>${f(centerFloor)} cm</strong></div></aside>`;
 }
 function dimensions(){
  const {aa}=layout(),a=art();let guide='';
  if(a){
   const centerY=(a.y+a.h/2)/s.wallH*100;
   if(s.heightOpen){
-    const visY=(a.y+a.top)/s.wallH*100;
+    const visY=(a.y+fixOff(a))/s.wallH*100;
     const holes=holeXs(a);
     guide=`<div class="height-guide" style="top:${visY}%">${holes.map(x=>`<span class="dot" style="--dotpos:${x/s.wallW*100}%"></span>`).join('')}</div><div class="height-guide center-guide" style="top:${centerY}%"></div>`;
   } else guide=`<div class="mid-guide" style="top:${centerY}%"><span>Axe milieu</span></div>`;
@@ -715,7 +760,41 @@ function overflowNotice(){
 }
 function plan(){const {gaps}=layout();const active=s.walls.find(w=>w.id===s.currentWallId);return `<div class="bar"><strong>${safeText(active?.name||'Mur A')} — Plan d’exposition</strong><span class="pill">Horizontal prioritaire</span></div>${wallSelector()}<div class="row">${field('Largeur du mur (cm)','wallW',s.wallW)}${field('Hauteur du mur (cm)','wallH',s.wallH)}</div>${overflowNotice()}<div class="wallbox"><div class="bar"><span class="small" style="color:#36544d">Vue de face — ${f(s.wallW)} × ${f(s.wallH)} cm</span><span class="small" style="color:#36544d">À l’échelle</span></div><div class="wall-stage" style="${stageStyle()}"><div class="measure overall-h"><span class="wall-label">${f(s.wallW)} cm</span></div><div class="measure overall-v"><span class="vertical-label">${f(s.wallH)} cm</span></div><div class="wall" id="axg-wall" style="aspect-ratio:${s.wallW} / ${s.wallH}"><div class="axis"></div>${heightMargin()}${dimensions()}${s.arts.map((a,i)=>`<div class="work n${i%3} ${a.id===s.selected?'selected':''} ${a.photo?'has-photo':''}" data-art="${a.id}" style="left:${a.x/s.wallW*100}%;top:${a.y/s.wallH*100}%;width:${a.w/s.wallW*100}%;height:${a.h/s.wallH*100}%">${a.photo?`<img class="art-image" src="${a.photo}" alt="Photo de ${safeText(a.name)}">`:''}<span>${a.id}</span>${fixingMarkup(a)}</div>`).join('')}</div></div><div class="metrics">${(s.arts.length?gaps:[]).map((g,i)=>`<div class="metric ${g.n<0?'bad':''} ${editGapIndex===i?'editing':''}"><button type="button" data-act="editGap" data-gap="${i}" aria-label="Modifier ${gapLabel(i,gaps.length)}, actuellement ${f(g.n)} centimètres"><span>${gapLabel(i,gaps.length)}</span><strong>${f(g.n)} cm</strong></button></div>`).join('')}</div>${s.showFixings!==false&&art()?`<div class="hint" style="color:#b93d46;margin:8px 2px 0;font-weight:650">${safeText(art().name)} · Vis (depuis gauche) : ${holeXs(art()).map(x=>`${f(x)} cm`).join(' · ')}</div>`:''}${!s.arts.length?'<p class="hint">Ce mur est vide. Ajoute ses œuvres dans l’onglet Œuvres.</p>':''}${editGapIndex>=0&&editGapIndex<gaps.length?`<div class="gap-direct-editor" aria-label="Modifier une distance horizontale"><div class="row"><div class="field"><label>${gapLabel(editGapIndex,gaps.length)} (cm)</label><input id="gap-direct-input" type="number" inputmode="decimal" step="0.1" min="0" value="${fv(gaps[editGapIndex].n)}" aria-label="Nouvelle distance pour ${gapLabel(editGapIndex,gaps.length)}"></div><button type="button" class="btn primary" data-act="saveGap">✓ OK</button><button type="button" class="btn" data-act="cancelGap">Annuler</button></div>${gapError?`<div role="alert" class="gap-error">${gapError}</div>`:''}</div>`:''}${s.heightOpen&&art()?'<p class="hint" style="color:#496057;margin:7px 0 0;font-size:11px">Hauteurs calculées depuis le plan de démonstration (positions et attaches préremplies).</p>':''}</div><div class="plan-actions"><div class="plan-row align"><button class="btn" data-act="top">⊤ Aligner haut</button><button class="btn" data-act="center">⊞ Aligner milieu</button><button class="btn" data-act="bottom">⊥ Aligner bas</button></div><div class="plan-row heights"><button class="btn ${s.centerOpen?'active':''}" data-act="toggleCenter" aria-expanded="${s.centerOpen}">↕ Milieu à hauteur…</button><button class="btn ${s.bottomOpen?'active':''}" data-act="toggleBottom" aria-expanded="${s.bottomOpen}">↕ Bas à hauteur…</button></div><div class="plan-row misc"><button class="btn primary" data-act="equal">↔ Espaces égaux</button><button class="btn ${s.heightOpen?'active':''}" data-act="toggleHeight" aria-expanded="${s.heightOpen}">${s.heightOpen?'Masquer la hauteur':'Afficher la hauteur'}</button></div></div>${s.centerOpen?centerPanel():''}${s.bottomOpen?bottomPanel():''}<p class="hint">Déplace les œuvres sur le mur ou touche une cote sous le plan. Les croix rouges indiquent les points d’accrochage ; les « ? » signalent une hauteur à confirmer.</p><div class="row">${art()?`<span class="pill">Œuvre sélectionnée : ${safeText(art().name)}</span><button class="btn" data-act="works">Modifier ses dimensions</button>`:'<span class="pill">Aucune œuvre</span>'}</div>${projectPanel()}`}
 function works(){return `<div class="bar"><strong>Mes œuvres</strong><button class="btn primary" data-act="add">＋ Ajouter</button></div><p class="hint">Sélectionne une œuvre pour modifier ses dimensions. Le plan se met à jour.</p>${s.arts.length?`<div class="cards">${s.arts.map(a=>`<div class="card ${s.selected===a.id?'selected':''}"><div class="cardtop"><strong>${safeText(a.name)}</strong><div class="row"><button class="btn ${a.id===s.selected?'active':''}" data-act="select" data-id="${a.id}">${a.id===s.selected?'Sélectionnée':'Choisir'}</button><button class="btn danger" data-act="askDelete" data-id="${a.id}">Supprimer</button></div></div>${s.deleteId===a.id?`<p class="hint">Supprimer ${safeText(a.name)} du mur ?</p><div class="actions"><button class="btn danger" data-act="confirmDelete" data-id="${a.id}">Oui, supprimer</button><button class="btn" data-act="cancelDelete">Annuler</button></div>`:''}${a.id===s.selected?`<div class="work-edit-top"><div class="work-dims"><div class="field name-field"><label for="art-name-${a.id}">Nom de l’œuvre</label><input id="art-name-${a.id}" type="text" maxlength="60" autocomplete="off" data-name-art="${a.id}" value="${safeText(a.name)}"></div><div class="row work-dims-row" style="margin-top:8px">${field('Largeur (cm)','w',a.w)}${field('Hauteur (cm)','h',a.h)}</div><div class="row work-dims-row" style="margin-top:8px"><div class="field"><label>Du bord gauche du mur (cm)</label><input type="number" inputmode="decimal" step="0.1" min="0" data-pos="x" value="${fv(a.x)}"></div><div class="field"><label>Du sol au bas de l’œuvre (cm)</label><input type="number" inputmode="decimal" step="0.1" min="0" data-pos="bottom" value="${fv(s.wallH-a.y-a.h)}"></div></div></div><div class="photo-side"><strong>Photo de l’œuvre</strong>${a.photo?`<img class="photo-preview" src="${a.photo}" alt="Aperçu de ${safeText(a.name)}">`:'<p class="hint">Ajoute la photo de cette œuvre pour la voir sur le mur.</p>'}<div class="photo-picker"><label class="btn" for="photo-camera-${a.id}">📷 Prendre une photo</label><input id="photo-camera-${a.id}" type="file" accept="image/*" capture="environment" data-photo="${a.id}"><label class="btn" for="photo-file-${a.id}">▧ Choisir une photo</label><input id="photo-file-${a.id}" type="file" accept="image/*" data-photo="${a.id}">${a.photo?`<button class="btn" data-act="removePhoto" data-id="${a.id}">Enlever la photo</button>`:''}</div></div></div>`:`<div class="small">${f(a.w)} × ${f(a.h)} cm${a.photo?' · Photo ajoutée':''}</div>`}</div>`).join('')}</div>`:'<p class="hint">Aucune œuvre. Appuie sur « Ajouter » pour recommencer.</p>'}<button class="btn primary" data-act="plan">Voir le plan →</button>`}
+
+// Schéma du rail : tasseau de l'œuvre (gris), tasseau mural (pointillés bleus), vis (croix rouges).
+function railSchema(a){
+ const g=cleatGeom(a),X0=48,W=144,Y0=18,Hh=115;
+ const sx=v=>X0+W*(v-a.x)/a.w,sy=o=>Y0+Hh*o/a.h;
+ const bh=Math.max(4,Hh*g.c.h/a.h),bw=Math.max(2,W*g.L/a.w);
+ let out=`<rect x="${X0}" y="${Y0}" width="${W}" height="${Hh}" fill="#f4eddf" stroke="#60645d" stroke-width="3"/>`;
+ out+=`<rect x="${sx(g.x1)}" y="${sy(g.top)}" width="${bw}" height="${bh}" fill="#c9cfd1" stroke="#7f8b90" stroke-width="1.5"/>`;
+ if(g.wallTopOffset!==null){
+  out+=`<rect x="${sx(g.x1)}" y="${sy(g.wallTopOffset)}" width="${bw}" height="${bh}" fill="rgba(80,120,170,.18)" stroke="#2b62a6" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  out+=g.xs.map(x=>`<g stroke="#c33c46" stroke-width="2"><circle cx="${sx(x)}" cy="${sy(g.screwOffset)}" r="4.5" fill="#fff"/><path d="M${sx(x)-3} ${sy(g.screwOffset)}h6 M${sx(x)} ${sy(g.screwOffset)-3}v6"/></g>`).join('');
+ }
+ return `<svg viewBox="0 0 240 145" width="100%" style="max-height:150px" role="img" aria-label="Schéma du rail">${out}</svg>`;
+}
+function railSummary(a){
+ const g=cleatGeom(a),hs=heightsFromPlan(a);
+ const base=`Tasseau mural de <b>${f(g.L)} cm</b>, du bord gauche du mur : de <b>${f(g.x1)}</b> à <b>${f(g.x2)} cm</b>. <b>${g.n} vis</b>${g.n>1?`, une tous les <b>${f(g.spacing)} cm</b>`:''}.`;
+ if(hs.cleatTop===null)return base+' Hauteur : renseigne l’emboîtement ci-dessus.';
+ return base+` Haut du tasseau à <b>${f(hs.cleatTop)} cm</b> du sol ; vis à <b>${f(g.c.h/2)} cm</b> sous ce haut, soit <b>${f(hs.vis)} cm</b> du sol.`;
+}
+function railPanel(a){
+ const c=cleatCfg(),d=s.cleat&&s.cleat.d!==''&&s.cleat.d!==undefined&&s.cleat.d!==null?fv(s.cleat.d):'';
+ const fld=(k,label,val,min,max,cls,ph)=>`<div class="field ${cls||''}"><label>${label}</label><input type="number" inputmode="decimal" step="0.1" min="${min}" max="${max}" data-cleat="${k}" value="${val}"${ph?` placeholder="${ph}"`:''}></div>`;
+ return `<div class="rail-panel"><strong>Réglages du rail</strong><p class="hint" style="margin:0">Identiques pour toutes les œuvres en rail. Le tasseau mural est fixé par vous, au mur.</p>
+ <div class="row">${fld('h','Hauteur du tasseau (cm)',fv(c.h),0.5,50)}${fld('end','Vis : retrait aux bouts (cm)',fv(c.end),0,100)}</div>
+ <div class="row">${fld('gap','Écart maxi entre vis (cm)',fv(c.gap),5,300)}${fld('d','Emboîtement (cm)',d,-50,100,d===''?'rail-need':'','À mesurer')}</div>
+ <p class="hint">Emboîtement : une fois les deux tasseaux emboîtés (essai sur une table), de combien le haut du tasseau mural est-il plus bas que le haut du tasseau de l’œuvre ? À mesurer une seule fois.</p>
+ <div class="rail-summary" id="rail-summary">${railSummary(a)}</div></div>`;
+}
+function refreshAttachLive(a){
+ const svg=out.querySelector('#attach-schema');if(svg)svg.innerHTML=attachSchema(a);
+ const sm=out.querySelector('#rail-summary');if(sm&&a.points==='rail')sm.innerHTML=railSummary(a);
+}
 function attachSchema(a){
+ if(a.points==='rail')return railSchema(a);
  const pts=fixingPoints(a);
  const rail=a.points==='rail';
  // Une attache au-dessus du cadre : on laisse de la place au-dessus du dessin.
@@ -732,20 +811,39 @@ function attachSchema(a){
 
 function attach(){
  const a=art();if(!a)return '<p class="hint">Aucune œuvre. Ajoute une œuvre dans l’onglet Œuvres.</p>';
- const options=[1,2,3,4,'rail'],showEdge=a.points!==1;
+ const options=[1,2,3,4,'rail'],showEdge=a.points!==1,isRail=a.points==='rail';
  return `<div class="bar"><strong>Attaches — ${safeText(a.name)}</strong><button class="btn" data-act="works">Changer d'œuvre</button></div>
  <div class="card"><span class="small">Nombre de points d’accrochage</span>
  <div class="attach-points">${options.map(p=>`<button class="btn ${p===a.points?'active':''}" data-act="points" data-id="${attachBtnValue(p)}">${attachLabel(p)}</button>`).join('')}</div>
- <div class="row"><div class="field"><label>${a.top<0?'Du bord haut à l’attache, vers le haut (cm)':'Du haut à l’attache (cm)'}</label><input type="number" min="0" step="0.1" inputmode="decimal" data-key="top" value="${fv(Math.abs(a.top))}"></div>${showEdge?field('Du bord latéral à l’attache (cm)','edge',a.edge):''}</div><div class="side-toggle" role="group" aria-label="Position de l’attache par rapport au bord haut"><button type="button" class="btn ${a.top<0?'':'active'}" data-act="topSide" data-id="below">Attache sous le bord haut</button><button type="button" class="btn ${a.top<0?'active':''}" data-act="topSide" data-id="above">Attache au-dessus du cadre</button></div>
+ <div class="row"><div class="field"><label>${isRail?'Du haut de l’œuvre au haut de son tasseau (cm)':a.top<0?'Du bord haut à l’attache, vers le haut (cm)':'Du haut à l’attache (cm)'}</label><input type="number" min="0" step="0.1" inputmode="decimal" data-key="top" value="${fv(Math.abs(a.top))}"></div>${showEdge?field(isRail?'Du bord latéral de l’œuvre au bout du tasseau (cm)':'Du bord latéral à l’attache (cm)','edge',a.edge):''}</div>${isRail?'':`<div class="side-toggle" role="group" aria-label="Position de l’attache par rapport au bord haut"><button type="button" class="btn ${a.top<0?'':'active'}" data-act="topSide" data-id="below">Attache sous le bord haut</button><button type="button" class="btn ${a.top<0?'active':''}" data-act="topSide" data-id="above">Attache au-dessus du cadre</button></div>`}
  ${a.points===4?`<div class="row" style="margin-top:9px"><div class="field"><label>Du bas aux attaches basses (cm) — à renseigner</label><input type="number" min="0" max="${fv(a.h)}" step="0.1" inputmode="decimal" data-key="bottomOffset" placeholder="Non renseigné" value="${a.bottomOffset===undefined||a.bottomOffset===null?'':safeText(a.bottomOffset)}"></div></div>`:''}
- <div class="square" style="text-align:center"><div id="attach-schema">${attachSchema(a)}</div><div class="small">Schéma indicatif : les quatre points sont sur deux rangées</div></div>
+ ${isRail?railPanel(a):''}
+ <div class="square" style="text-align:center"><div id="attach-schema">${attachSchema(a)}</div>${isRail?'<div class="rail-legend"><i></i>Tasseau de l’œuvre (au dos)<i class="wall"></i>Tasseau mural · croix rouges : vis</div>':'<div class="small">Schéma indicatif : les quatre points sont sur deux rangées</div>'}</div>
  ${fixWarnings(a).map(x=>`<div class="notice-attach">${safeText(x)}</div>`).join('')}</div>
  <div class="actions"><button class="btn primary" data-act="drill">Calculer les perçages →</button></div>`;
 }
 
+function railDrill(a){
+ const g=cleatGeom(a),hs=heightsFromPlan(a);
+ const warnings=fixWarnings(a).map(w=>`<div class="notice-attach">${safeText(w)}</div>`).join('');
+ const need='<div class="pt" style="color:#946e27!important">— cm</div><div class="drill-help">Emboîtement à renseigner (Attaches)</div>';
+ const screws=g.xs.map((x,i)=>`<div class="drill-point"><div class="small">Vis ${i+1} — depuis la gauche du mur</div><strong>${f(x)} cm</strong><em>${f(x-g.x1)} cm depuis le bout gauche du tasseau</em></div>`).join('');
+ return `<div class="bar"><strong>Perçage du rail — ${safeText(a.name)}</strong><span class="pill">Horizontal prioritaire</span></div>
+ <div class="card"><div class="small">Tasseau mural, depuis le bord gauche du mur</div>
+ <div class="drill-grid"><div class="drill-point"><div class="small">Début</div><div class="pt" style="color:#165e9b!important">${f(g.x1)} cm</div></div><div class="drill-point"><div class="small">Fin</div><div class="pt" style="color:#165e9b!important">${f(g.x2)} cm</div></div><div class="drill-point"><div class="small">Longueur</div><div class="pt" style="color:#647891!important">${f(g.L)} cm</div></div></div>
+ <div class="small" style="margin-top:12px">${g.n} vis sur le tasseau</div><div class="drill-points">${screws}</div>
+ ${g.n>1?`<strong>↔ Écart entre vis : ${f(g.spacing)} cm</strong>`:''}
+ ${warnings}</div>
+ <div class="card"><strong>Hauteurs depuis le sol — indicatives d’après le plan</strong><div class="drill-grid"><div class="drill-point"><div class="small">Haut du tasseau mural</div>${hs.cleatTop===null?need:`<div class="pt" style="color:#165e9b!important">${f(hs.cleatTop)} cm</div>`}</div><div class="drill-point"><div class="small">Vis (axe)</div>${hs.vis===null?need:`<div class="pt" style="color:#be3e43!important">${f(hs.vis)} cm</div>`}</div><div class="drill-point"><div class="small">Milieu de l’œuvre</div><div class="pt" style="color:#647891!important">${f(hs.mid)} cm</div></div></div>
+ <p class="hint">Pose le haut du tasseau mural sur la ligne indiquée, puis perce à ${f(g.c.h/2)} cm sous son bord haut. Ces hauteurs viennent du plan et de l’emboîtement mesuré : fais un essai sur une œuvre avant de percer toute la série.</p></div>
+ <div class="actions"><button class="btn" data-act="attach">← Modifier le rail</button><button class="btn" data-act="plan">Voir le mur</button><button class="btn primary" data-act="siteMode">☑ Mode chantier</button><button class="btn" data-act="exportPdf">▧ PDF coté du mur</button></div>
+ <div class="actions"><button class="btn" data-act="toggleFixings">${s.showFixings===false?'Afficher':'Masquer'} les points sur le plan</button></div>
+ <p class="hint">Avant tout perçage, contrôle les mesures, la nature du mur, la charge et la résistance des fixations.</p>`;
+}
 function drill(){
  if(s.siteMode)return sitePanel();
  const a=art();if(!a)return `<p class="hint">Ce mur ne contient pas d’œuvre. Ajoute une œuvre dans l’onglet Œuvres.</p><div class="actions"><button class="btn" data-act="exportPdf">PDF coté du mur</button><button class="btn" data-act="siteMode">Mode chantier</button></div>`;
+ if(a.points==='rail')return railDrill(a);
  const points=fixingPoints(a),hs=heightsFromPlan(a),xs=holeXs(a);const bottomPoint=a.points===4?points.find(p=>p.position==='bas'&&p.offset!==null):null;
  const cards=points.map((p,i)=>`<div class="drill-point"><div class="small">${safeText(p.name)} — depuis la gauche</div><strong>${f(p.x)} cm</strong>${p.offset===null?'<span class="drill-help">Hauteur à confirmer</span>':''}</div>`).join('');
  const warnings=fixWarnings(a).map(w=>`<div class="notice-attach">${safeText(w)}</div>`).join('');
@@ -908,6 +1006,7 @@ function ridfouMakePdf(walls,photos=new Map()){
       rect(x,y,aw,ah,[.94,.90,.83],[.30,.33,.32],1.2);
       const ph=a.photo?photos.get(a.photo):null;
       if(ph&&aw>6&&ah>6){const fit=Math.min((aw-3)/ph.w,(ah-3)/ph.h),dw=ph.w*fit,dh=ph.h*fit;image(ph,x+(aw-dw)/2,y+(ah-dh)/2,dw,dh)}
+      if(a.points==='rail'){const cg=cleatGeom(a);if(cg.wallTopOffset!==null)rect(x0+cg.x1*sc,y0+(H-Number(a.y)-cg.wallTopOffset-cg.c.h)*sc,Math.max(1.2,cg.L*sc),Math.max(1.2,cg.c.h*sc),[.88,.92,.96],blue,.8)}
       const ps=fixingPoints(a);
       ps.forEach(p=>{
         const px=x0+p.x*sc;const ofs=p.offset===null?Math.max(4,Number(a.top)||5):Number(p.offset);
@@ -924,7 +1023,7 @@ function ridfouMakePdf(walls,photos=new Map()){
       txt(xx-roughly(label,7)/2,y0-16,label,7,false,green);
     }
     txt(44,309,'Espacements en cm - de gauche à droite',8,false,muted);
-    txt(613,309,'Points de fixation : croix rouges',8,false,red);
+    txt(613,309,arts.some(a=>a.points==='rail')?'Vis : croix rouges - tasseau : bleu':'Points de fixation : croix rouges',8,false,red);
   }
   function heights(w){
     const rows=[...(w.arts||[])].sort((a,b)=>a.x-b.x).map(a=>{
@@ -1250,8 +1349,9 @@ function rfFill(g){
  const m=rfCalc[g+'Mode'],list=[...s.arts].sort((p,q)=>p.x-q.x),H=Number(s.wallH)||0;
  const put=(x,y,z)=>{rfCalc[g+'1']=x;rfCalc[g+'2']=y;rfCalc[g+'3']=z};
  const n=v=>fv(Math.max(0,v));
- const top=o=>Number.isFinite(Number(o.top))?Number(o.top):0;
- const hole=o=>H-o.y-top(o);
+ const top=o=>o.points==='rail'?cleatGeom(o).screwOffset:(Number.isFinite(Number(o.top))?Number(o.top):0);
+ const hole=o=>top(o)===null?null:H-o.y-top(o);
+ const railNote='La hauteur du rail est à confirmer : renseigne l’emboîtement dans Attaches.';
  rfCalc.note='';
  if(g==='w'&&m==='espaces'){
   if(!list.length){rfCalc.note='Aucune œuvre sur ce mur.';return}
@@ -1265,10 +1365,12 @@ function rfFill(g){
  if(g==='h'){
   if(m==='decalage'){
    if(!next){put('','','');rfCalc.note='« '+o.name+' » est la dernière œuvre à droite : choisis-en une autre.';return}
+   if(hole(o)===null||hole(next)===null){put('','','');rfCalc.note=railNote;return}
    put(n(hole(o)),n(hole(next)),'');
    rfCalc.note='Trou de « '+o.name+' » → trou de « '+next.name+' », repris du plan.';return;
   }
   const t=top(o);
+  if(t===null){put('','','');rfCalc.hAbove=false;rfCalc.note=railNote;return}
   rfCalc.hAbove=t<0;
   const t3=n(Math.abs(t));
   if(m==='milieu')put(n(H-o.y-o.h/2),n(o.h),t3);
@@ -1408,6 +1510,11 @@ function wallNameField(w){
 // — Sauvegarde / restauration du projet (fichier .json) —
 const DATA_URL_RE=/^data:[a-z0-9.+\/-]{0,60};base64,[A-Za-z0-9+\/=]+$/i;
 const cleanNum=(v,min,max,fallback)=>{const n=Number(v);return v!==null&&v!==''&&Number.isFinite(n)&&n>=min&&n<=max?n:fallback};
+// Réglages du rail (tasseaux emboîtés) : communs à toutes les œuvres du projet.
+function cleanCleat(c){
+ if(!c||typeof c!=='object')return {h:5,end:5,gap:40,d:''};
+ return {h:cleanNum(c.h,0.5,50,5),end:cleanNum(c.end,0,100,5),gap:cleanNum(c.gap,5,300,40),d:(c.d===''||c.d===null||c.d===undefined)?'':cleanNum(c.d,-50,100,'')};
+}
 function cleanDataUrl(v,maxLen){return typeof v==='string'&&v.length<=maxLen&&DATA_URL_RE.test(v)?v:null}
 function cleanArt(a,usedIds){
  if(!a||typeof a!=='object')throw new Error('une œuvre est illisible');
@@ -1443,11 +1550,11 @@ function parseProject(text){
  if(!Array.isArray(data.walls)||!data.walls.length)throw new Error('aucun mur dans la sauvegarde');
  if(data.walls.length>26)throw new Error('plus de 26 murs dans la sauvegarde');
  const used=new Set(),walls=data.walls.map(w=>cleanWall(w,used));
- return {walls,current:walls.some(w=>w.id===data.currentWallId)?data.currentWallId:walls[0].id};
+ return {walls,cleat:cleanCleat(data.cleat),current:walls.some(w=>w.id===data.currentWallId)?data.currentWallId:walls[0].id};
 }
 function projectSnapshot(){
  syncActiveWall();
- return {app:'ridfou-expo',version:1,exportedAt:new Date().toISOString(),currentWallId:s.currentWallId,
+ return {app:'ridfou-expo',version:1,exportedAt:new Date().toISOString(),currentWallId:s.currentWallId,cleat:{...s.cleat},
   walls:s.walls.map(w=>({...w,importedPlan:w.importedPlan?{name:w.importedPlan.name,kind:w.importedPlan.kind,data:w.importedPlan.data}:null}))};
 }
 async function exportProject(){
@@ -1477,7 +1584,7 @@ function importProjectFile(file){
   catch(err){alert('Import impossible : '+(err.message||err)+'. Le projet actuel n’a pas été modifié.');return}
   const nArts=parsed.walls.reduce((n,w)=>n+w.arts.length,0);
   if(!confirm(`Remplacer le projet actuel (${s.walls.length} mur(s)) par « ${file.name} » (${parsed.walls.length} mur(s), ${nArts} œuvre(s)) ?\nLes données actuelles de cet appareil seront écrasées.`))return;
-  s.walls=parsed.walls;pendingDeleteWallId=null;s.deleteId=null;
+  s.walls=parsed.walls;s.cleat=parsed.cleat;pendingDeleteWallId=null;s.deleteId=null;
   loadWall(s.walls.find(w=>w.id===parsed.current)||s.walls[0]);
   s.tab='plan';projectMsg=`Projet importé : ${s.walls.length} mur(s), ${nArts} œuvre(s).`;draw();pwaWrite();
  };
@@ -1491,6 +1598,15 @@ function projectPanel(){
 function handleExtraChange(e){
  const t=e.target;if(!t||!t.matches)return false;
  if(t.matches('input[data-calc-above]')){rfCalc.hAbove=t.checked;draw();return true}
+ if(t.matches('input[data-cleat]')){
+  const k=t.dataset.cleat,lim={h:[0.5,50],end:[0,100],gap:[5,300],d:[-50,100]}[k];
+  if(!lim)return true;
+  const raw=t.value.trim().replace(',','.');
+  if(raw===''&&k==='d'){s.cleat.d='';draw();return true}
+  const n=Number(raw);
+  if(!raw||!Number.isFinite(n)||n<lim[0]||n>lim[1]){alert('Valeur hors limites : entre '+lim[0]+' et '+lim[1]+' cm.');draw();return true}
+  s.cleat[k]=n;draw();return true;
+ }
  if(t.matches('input[data-name-art]')){const a=s.arts.find(z=>z.id===Number(t.dataset.nameArt));if(a)a.name=sanitizeName(t.value,'Œuvre '+a.id);draw();return true}
  if(t.matches('input[data-name-wall]')){const w=s.walls.find(z=>z.id===t.dataset.nameWall);if(w)w.name=sanitizeName(t.value,'Mur '+w.id);draw();return true}
  if(t.matches('input[data-pos]')){
@@ -1623,10 +1739,10 @@ if(act==='saveGap'){
  if(err){gapError=err;draw();return}
  editGapIndex=-1;gapError='';draw();return;
 }
-if(['plan','works','attach','drill'].includes(act)){s.tab=act;s.siteMode=false;draw();return}if(act==='toggleCenter'){s.centerOpen=!s.centerOpen;draw();return}if(act==='toggleBottom'){s.bottomOpen=!s.bottomOpen;draw();return}if(act==='applyBottom'){const input=out.querySelector('[data-bottom-height]');const raw=input?.value?.trim()||'';const n=Number(raw);const scope=out.querySelector('input[name="bottomScope"]:checked')?.value||s.bottomScope;if(!raw||!Number.isFinite(n)||n<0||n>s.wallH){alert('Indique une hauteur comprise entre 0 et '+f(s.wallH)+' cm.');return}const aa=scope==='all'?s.arts:[art()].filter(Boolean);if(!aa.length){alert('Aucune œuvre sélectionnée.');return}const impossible=aa.filter(a=>n+a.h>s.wallH+0.00001);if(impossible.length){alert('Hauteur impossible pour '+impossible.map(a=>a.name).join(', ')+' : les œuvres doivent rester dans le mur.');return}s.bottomHeight=n;s.bottomScope=scope;for(const a of aa)a.y=s.wallH-n-a.h;draw();return}if(act==='applyCenter'){const input=out.querySelector('[data-center-height]');const raw=input?.value?.trim()||'';const n=Number(raw);const scope=out.querySelector('input[name="centerScope"]:checked')?.value||s.centerScope;if(!raw||!Number.isFinite(n)||n<0||n>s.wallH){alert('Indique une hauteur comprise entre 0 et '+f(s.wallH)+' cm.');return}const aa=scope==='all'?s.arts:[art()].filter(Boolean);if(!aa.length){alert('Aucune œuvre sélectionnée.');return}const impossible=aa.filter(a=>n<a.h/2-0.00001||n>s.wallH-a.h/2+0.00001);if(impossible.length){alert('Hauteur impossible pour '+impossible.map(a=>a.name).join(', ')+' : les œuvres doivent rester dans le mur.');return}s.centerHeight=n;s.centerScope=scope;for(const a of aa)a.y=s.wallH-n-a.h/2;draw();return}if(act==='toggleGap'){s.gapOpen=!s.gapOpen;draw();return}if(act==='toggleHeight'){s.heightOpen=!s.heightOpen;draw();return}if(act==='select'){s.selected=Number(b.dataset.id);s.deleteId=null;draw();return}if(act==='askDelete'){s.deleteId=Number(b.dataset.id);draw();return}if(act==='cancelDelete'){s.deleteId=null;draw();return}if(act==='confirmDelete'){const id=Number(b.dataset.id);if(id!==s.deleteId)return;s.arts=s.arts.filter(a=>a.id!==id);if(s.selected===id)s.selected=s.arts[0]?.id??null;s.deleteId=null;draw();return}if(act==='add'){const id=Math.max(0,...s.arts.map(a=>a.id))+1;s.arts.push({id,name:'Œuvre '+id,w:50,h:75,x:Math.max(0,Math.min(40*id,s.wallW-50)),y:90,edge:10,top:8,points:2});s.selected=id;s.tab='works';s.deleteId=null;draw();return}if(act==='equal'){if(!s.arts.length){alert('Ajoute d’abord une œuvre sur ce mur depuis l’onglet Œuvres.');return}const aa=[...s.arts].sort((a,b)=>a.x-b.x),total=aa.reduce((v,a)=>v+a.w,0);if(total>=s.wallW){alert('Le total des largeurs dépasse le mur.');return}const gap=(s.wallW-total)/(aa.length+1);let x=gap;for(const a of aa){a.x=x;x+=a.w+gap}draw();return}if(act==='applyGap'){const input=out.querySelector('[data-key="desiredGap"]'),n=Number(input?.value);if(!input||input.value.trim()===''||!Number.isFinite(n)||n<0){alert('Indique un écart positif ou nul.');return}s.desiredGap=n;applyGap(n);draw();return}if(act==='presetGap'){const n=Number(b.dataset.id);s.desiredGap=n;applyGap(n);draw();return}if(['center','top','bottom'].includes(act)){const a=art();if(!a)return;const ref=act==='center'?a.y+a.h/2:act==='top'?a.y:a.y+a.h;for(const v of s.arts){v.y=Math.max(0,Math.min(s.wallH-v.h,act==='center'?ref-v.h/2:act==='top'?ref:ref-v.h))}draw();return}if(act==='removePhoto'){const a=s.arts.find(z=>z.id===Number(b.dataset.id));if(a){delete a.photo;draw()}return}if(act==='points'){const a=art();if(a){const raw=b.dataset.id;a.points=raw==='rail'?'rail':Number(raw);if(a.points===4&&a.bottomOffset===undefined)a.bottomOffset=''}draw()}});
+if(['plan','works','attach','drill'].includes(act)){s.tab=act;s.siteMode=false;draw();return}if(act==='toggleCenter'){s.centerOpen=!s.centerOpen;draw();return}if(act==='toggleBottom'){s.bottomOpen=!s.bottomOpen;draw();return}if(act==='applyBottom'){const input=out.querySelector('[data-bottom-height]');const raw=input?.value?.trim()||'';const n=Number(raw);const scope=out.querySelector('input[name="bottomScope"]:checked')?.value||s.bottomScope;if(!raw||!Number.isFinite(n)||n<0||n>s.wallH){alert('Indique une hauteur comprise entre 0 et '+f(s.wallH)+' cm.');return}const aa=scope==='all'?s.arts:[art()].filter(Boolean);if(!aa.length){alert('Aucune œuvre sélectionnée.');return}const impossible=aa.filter(a=>n+a.h>s.wallH+0.00001);if(impossible.length){alert('Hauteur impossible pour '+impossible.map(a=>a.name).join(', ')+' : les œuvres doivent rester dans le mur.');return}s.bottomHeight=n;s.bottomScope=scope;for(const a of aa)a.y=s.wallH-n-a.h;draw();return}if(act==='applyCenter'){const input=out.querySelector('[data-center-height]');const raw=input?.value?.trim()||'';const n=Number(raw);const scope=out.querySelector('input[name="centerScope"]:checked')?.value||s.centerScope;if(!raw||!Number.isFinite(n)||n<0||n>s.wallH){alert('Indique une hauteur comprise entre 0 et '+f(s.wallH)+' cm.');return}const aa=scope==='all'?s.arts:[art()].filter(Boolean);if(!aa.length){alert('Aucune œuvre sélectionnée.');return}const impossible=aa.filter(a=>n<a.h/2-0.00001||n>s.wallH-a.h/2+0.00001);if(impossible.length){alert('Hauteur impossible pour '+impossible.map(a=>a.name).join(', ')+' : les œuvres doivent rester dans le mur.');return}s.centerHeight=n;s.centerScope=scope;for(const a of aa)a.y=s.wallH-n-a.h/2;draw();return}if(act==='toggleGap'){s.gapOpen=!s.gapOpen;draw();return}if(act==='toggleHeight'){s.heightOpen=!s.heightOpen;draw();return}if(act==='select'){s.selected=Number(b.dataset.id);s.deleteId=null;draw();return}if(act==='askDelete'){s.deleteId=Number(b.dataset.id);draw();return}if(act==='cancelDelete'){s.deleteId=null;draw();return}if(act==='confirmDelete'){const id=Number(b.dataset.id);if(id!==s.deleteId)return;s.arts=s.arts.filter(a=>a.id!==id);if(s.selected===id)s.selected=s.arts[0]?.id??null;s.deleteId=null;draw();return}if(act==='add'){const id=Math.max(0,...s.arts.map(a=>a.id))+1;s.arts.push({id,name:'Œuvre '+id,w:50,h:75,x:Math.max(0,Math.min(40*id,s.wallW-50)),y:90,edge:10,top:8,points:2});s.selected=id;s.tab='works';s.deleteId=null;draw();return}if(act==='equal'){if(!s.arts.length){alert('Ajoute d’abord une œuvre sur ce mur depuis l’onglet Œuvres.');return}const aa=[...s.arts].sort((a,b)=>a.x-b.x),total=aa.reduce((v,a)=>v+a.w,0);if(total>=s.wallW){alert('Le total des largeurs dépasse le mur.');return}const gap=(s.wallW-total)/(aa.length+1);let x=gap;for(const a of aa){a.x=x;x+=a.w+gap}draw();return}if(act==='applyGap'){const input=out.querySelector('[data-key="desiredGap"]'),n=Number(input?.value);if(!input||input.value.trim()===''||!Number.isFinite(n)||n<0){alert('Indique un écart positif ou nul.');return}s.desiredGap=n;applyGap(n);draw();return}if(act==='presetGap'){const n=Number(b.dataset.id);s.desiredGap=n;applyGap(n);draw();return}if(['center','top','bottom'].includes(act)){const a=art();if(!a)return;const ref=act==='center'?a.y+a.h/2:act==='top'?a.y:a.y+a.h;for(const v of s.arts){v.y=Math.max(0,Math.min(s.wallH-v.h,act==='center'?ref-v.h/2:act==='top'?ref:ref-v.h))}draw();return}if(act==='removePhoto'){const a=s.arts.find(z=>z.id===Number(b.dataset.id));if(a){delete a.photo;draw()}return}if(act==='points'){const a=art();if(a){const raw=b.dataset.id;a.points=raw==='rail'?'rail':Number(raw);if(a.points==='rail'&&Number(a.top)<0)a.top=Math.abs(a.top);if(a.points===4&&a.bottomOffset===undefined)a.bottomOffset=''}draw()}});
 root.addEventListener('keydown',e=>{if(e.target?.id!=='gap-direct-input')return;if(e.key==='Enter'){e.preventDefault();out.querySelector('[data-act=saveGap]')?.click();}else if(e.key==='Escape'){e.preventDefault();out.querySelector('[data-act=cancelGap]')?.click();}});
 root.addEventListener('input',e=>{const input=e.target.closest('input[data-calc-input]');if(!input||s.tab!=='calc')return;const key=input.dataset.calcInput;if(/^[hw][123]$/.test(key)){rfCalc[key]=input.value;rfCalcUpdate();pwaSave();}});
-root.addEventListener('input',e=>{const input=e.target.closest('input[data-key]');if(!input||s.tab!=='attach')return;const key=input.dataset.key;if(key!=='top'&&key!=='edge'&&key!=='bottomOffset')return;const raw=input.value.trim();const a=art();if(!a)return;if(key==='bottomOffset'&&raw===''){a.bottomOffset='';const svg=out.querySelector('#attach-schema');if(svg)svg.innerHTML=attachSchema(a);pwaSave();return}const n=Number(raw);if(raw===''||!Number.isFinite(n)||n<0)return;a[key]=key==='top'&&a.top<0?-n:n;const svg=out.querySelector('#attach-schema');if(svg)svg.innerHTML=attachSchema(a);pwaSave()});
+root.addEventListener('input',e=>{const input=e.target.closest('input[data-key]');if(!input||s.tab!=='attach')return;const key=input.dataset.key;if(key!=='top'&&key!=='edge'&&key!=='bottomOffset')return;const raw=input.value.trim();const a=art();if(!a)return;if(key==='bottomOffset'&&raw===''){a.bottomOffset='';refreshAttachLive(a);pwaSave();return}const n=Number(raw);if(raw===''||!Number.isFinite(n)||n<0)return;a[key]=key==='top'&&a.top<0?-n:n;refreshAttachLive(a);pwaSave()});
 root.addEventListener('change',e=>{if(handleExtraChange(e))return;if(e.target?.matches('[data-calc-method]')){
  const group=e.target.dataset.calcMethod;
  if((group==='h'&&RF_HM.includes(e.target.value))||(group==='w'&&RF_WM.includes(e.target.value))){
