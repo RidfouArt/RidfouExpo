@@ -2,7 +2,7 @@
 // Rôle : faire fonctionner l'application hors ligne (sur un chantier, sans réseau), et récupérer
 // la nouvelle version de index.html dès qu'on est en ligne.
 // Quand tu publies une nouvelle version de l'application, incrémente simplement CACHE ci-dessous.
-const CACHE = 'ridfou-expo-v1';
+const CACHE = 'ridfou-expo-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', event => {

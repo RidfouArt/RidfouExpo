@@ -192,6 +192,34 @@ body{background:#f8f2e8!important;color:#183150!important}
 .axg .calc-actions .btn{flex:1;min-width:0}
 .axg .calc-actions .btn:disabled{opacity:.45;cursor:default}
 .axg .calc-copy-feedback{text-align:center;font-size:11px;color:#157455;min-height:14px;margin-top:6px}
+.axg .calc-seg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:0 0 12px}
+.axg .calc-seg .btn{min-height:44px;font-size:14px;font-weight:750}
+.axg .calc-seg .btn.on{background:#2563eb!important;color:#fff!important;border-color:#2563eb!important}
+.axg .calc-num{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-right:6px;border-radius:50%;background:#2563eb;color:#fff;font-size:11px;font-weight:800;vertical-align:1px;line-height:1}
+.axg .calc-num.res{background:#be3e43}
+.axg .calc-link{margin:10px 0 4px;padding:10px;border:1px dashed #b7cbdd;border-radius:10px;background:#f8fbfe}
+.axg .calc-link label{display:block;font-size:12px;color:#405c78;font-weight:650;line-height:1.45;margin-bottom:5px}
+.axg .calc-link-row{display:flex;gap:8px}
+.axg .calc-link-row select{flex:1;min-width:0;min-height:42px;border-radius:8px;border:1px solid #b8cadc;background:#fff;color:#20314a;font-size:16px;padding:9px 10px;font-family:inherit;appearance:auto}
+.axg .calc-link-row .btn{flex:none;min-width:46px;font-size:18px;padding:0 12px}
+.axg .calc-link>.btn{width:100%}
+.axg .calc-actions .btn,.axg .calc-link>.btn{min-height:44px}
+.axg .calc-link .btn:disabled{opacity:.45;cursor:default}
+.axg .calc-note{font-size:11.5px;color:#157455;margin-top:7px;line-height:1.45}
+.axg .calc-sketch{display:block;width:100%;max-width:360px;margin:10px auto 2px;background:#f7fafd;border:1px solid #dbe6ef;border-radius:10px}
+.axg .sk-floor{stroke:#8a9bb0;stroke-width:2.5}
+.axg .sk-art{fill:#fff;stroke:#5b7690;stroke-width:1.5}
+.axg .sk-wall{fill:#eef3f8;stroke:#9fb3c8;stroke-width:1.5}
+.axg .sk-guide{stroke:#9fb3c8;stroke-width:1;stroke-dasharray:3 3}
+.axg .sk-hole{fill:#be3e43}
+.axg .sk-dim line{stroke:#2563eb;stroke-width:1.5}
+.axg .sk-res line{stroke:#be3e43;stroke-width:2}
+.axg .sk-b circle{fill:#fff;stroke:#2563eb;stroke-width:1.5}
+.axg .sk-b.res circle{stroke:#be3e43}
+.axg .sk-b text{font:700 10px system-ui,-apple-system,sans-serif;text-anchor:middle;dominant-baseline:central;fill:#2563eb}
+.axg .sk-b.res text{fill:#be3e43}
+.axg details.calc-formula-box summary{cursor:pointer;color:#254e72;font-size:13px;font-weight:750;padding:4px 0}
+.axg details.calc-formula-box[open] summary{margin-bottom:8px}
 
 /* Noms, sauvegarde du projet, mesure sur la photo du plan */
 .axg .name-row{margin:0 0 12px}
@@ -262,7 +290,7 @@ function pwaRead(db){
 }
 function pwaSnapshot(){
  // Ignore la confirmation de suppression, qui n'est pas une donnée du projet.
- syncActiveWall();return {...s,deleteId:null};
+ syncActiveWall();return {...s,deleteId:null,calc:rfCalcSnapshot()};
 }
 function pwaWrite(){
  if(!pwaLoaded)return;
@@ -294,6 +322,7 @@ function pwaStart(){
     if(chosen)loadWall(chosen);
    }
   }
+  if(prev&&prev.calc)rfCalcRestore(prev.calc);
   if(!s.walls.length){s.currentWallId='A';s.walls=[wallFromActive('A','Mur A')];}
   s.tab='plan';s.deleteId=null;
   pwaLoaded=true;
@@ -331,6 +360,7 @@ function loadWall(w){
  s.selected=s.arts.some(a=>a.id===s.selected)?s.selected:(s.arts[0]?.id??null);
  s.centerOpen=false;s.bottomOpen=false;s.gapOpen=false;s.siteMode=false;importChoicesOpen=false;importPreviewOpen=false;measureReset();
  editGapIndex=-1;gapError='';
+ rfCalc.hArt=rfCalc.wArt='';rfCalc.note='';
 }
 function chooseWall(id){
  pendingDeleteWallId=null;syncActiveWall();const wall=s.walls.find(w=>w.id===id);
@@ -1129,8 +1159,9 @@ function applyDirectGap(index, wanted){
 
 function applyGap(g){if(!Number.isFinite(g)||g<0)return;const aa=[...s.arts].sort((a,b)=>a.x-b.x),total=aa.reduce((v,a)=>v+a.w,0);const needed=total+g*Math.max(0,aa.length-1);if(needed>s.wallW+0.00001){alert('Les œuvres et les écarts demandés dépassent la largeur du mur.');return}let x=(s.wallW-needed)/2;for(const a of aa){a.x=x;x+=a.w+g}}
 
-// Calculatrices indépendantes : valeurs de session sans réécrire les données des murs.
-const rfCalc={hMode:'milieu',hAbove:false,h1:'',h2:'',h3:'',wMode:'trous',w1:'',w2:'',w3:''};
+// Calculatrices : un seul onglet, deux outils (hauteur / largeur). Ce qui est calculé ici ne modifie jamais le plan.
+const RF_HM=['milieu','haut','bas','decalage'],RF_WM=['trous','entraxe','espaces'];
+const rfCalc={view:'h',hMode:'milieu',hAbove:false,h1:'',h2:'',h3:'',hArt:'',wMode:'trous',w1:'',w2:'',w3:'',wArt:'',mem:{},note:''};
 function rfN(v){
  const raw=String(v??'').replace(/[\s\u00a0\u202f]/g,'').replace(',','.');
  if(!raw||!/^\d+(?:\.\d+)?$/.test(raw))return null;
@@ -1171,32 +1202,186 @@ function rfCalcWidth(){
  const v=a+b+c;
  return {value:v,label:'Distance à droite depuis le dernier trou',sub:rfF(a)+' + '+rfF(b)+' + '+rfF(c)+' = '+rfF(v)+' cm'};
 }
-function rfCalcInput(key,label,placeholder,keyboard='decimal'){
- return '<div class="calc-field"><label for="rf-'+key+'">'+label+' (cm)</label><input id="rf-'+key+'" type="text" inputmode="'+keyboard+'" autocomplete="off" spellcheck="false" data-calc-input="'+key+'" value="'+rfCalc[key].replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')+'" placeholder="'+placeholder+'"></div>';
+// Définition des méthodes : libellés, champs (dans l'ordre d'affichage ①②③), formule et explication.
+// keys = clés de stockage (h1/h2/h3, w1/w2/w3) ; elles ne changent pas pour garder les anciennes données.
+const RF_MODES={
+ h:{
+  milieu:{label:'Milieu de l’œuvre',keys:[1,2,3],above:true,
+   fields:[['Milieu depuis le sol','Ex. 155'],['Hauteur de l’œuvre','Ex. 80'],['Du haut de l’œuvre à l’attache','Ex. 5']],
+   formula:'Hauteur du trou = ① + (② ÷ 2) − ③',explain:'③ = distance entre le haut de l’œuvre et l’axe de son attache. Si l’attache est au-dessus du cadre, ③ s’ajoute au lieu de se retrancher.'},
+  haut:{label:'Haut de l’œuvre',keys:[1,3],above:true,
+   fields:[['Haut depuis le sol','Ex. 180'],['Du haut de l’œuvre à l’attache','Ex. 5']],
+   formula:'Hauteur du trou = ① − ②',explain:'② = distance entre le haut de l’œuvre et l’axe de son attache. Si l’attache est au-dessus du cadre, ② s’ajoute.'},
+  bas:{label:'Bas de l’œuvre',keys:[1,2,3],above:true,
+   fields:[['Bas depuis le sol','Ex. 100'],['Hauteur de l’œuvre','Ex. 80'],['Du haut de l’œuvre à l’attache','Ex. 5']],
+   formula:'Hauteur du trou = ① + ② − ③',explain:'③ = distance entre le haut de l’œuvre et l’axe de son attache. Si l’attache est au-dessus du cadre, ③ s’ajoute.'},
+  decalage:{label:'Déplacement vertical · trou à trou',keys:[1,2],above:false,
+   fields:[['Hauteur du premier trou','Ex. 180'],['Hauteur du deuxième trou','Ex. 195']],
+   formula:'Déplacement = ② − ①',explain:'Si le résultat est positif, tu montes ; s’il est négatif, tu descends.'}
+ },
+ w:{
+  trous:{label:'De trou à trou entre deux œuvres',keys:[1,2,3],
+   fields:[['Dernier trou → bord droit de l’œuvre 1','Ex. 7'],['Écart entre les deux œuvres','Ex. 15'],['Bord gauche œuvre 2 → premier trou','Ex. 5']],
+   formula:'Distance = ① + ② + ③',explain:'Dernière attache → bord droit + écart entre cadres + bord gauche → première attache.'},
+  entraxe:{label:'Entraxe des attaches',keys:[1,2,3],
+   fields:[['Largeur de l’œuvre','Ex. 100'],['Bord gauche → attache gauche','Ex. 5'],['Bord droit → attache droite','Ex. 5']],
+   formula:'Entraxe = ① − ② − ③',explain:'Largeur de l’œuvre moins les deux retraits des attaches.'},
+  espaces:{label:'Espaces égaux sur un mur',keys:[1,2],
+   fields:[['Largeur du mur','Ex. 600'],['Largeurs des œuvres (séparées par +)','Ex. 80 + 100 + 60','text']],
+   formula:'Écart = (① − somme des ②) ÷ (nombre d’œuvres + 1)',explain:'Le même écart est laissé à gauche, entre chaque œuvre et à droite.'}
+ }
+};
+
+// Mémoire par méthode : changer de méthode ne fait plus perdre ce qui était saisi.
+function rfStash(g){
+ rfCalc.mem[g+':'+rfCalc[g+'Mode']]={1:rfCalc[g+'1'],2:rfCalc[g+'2'],3:rfCalc[g+'3'],above:g==='h'&&rfCalc.hAbove};
+}
+function rfRecall(g){
+ const v=rfCalc.mem[g+':'+rfCalc[g+'Mode']];
+ rfCalc.note='';
+ for(const k of [1,2,3])rfCalc[g+k]=v?v[k]:'';
+ if(g==='h')rfCalc.hAbove=!!(v&&v.above);
+ // Pas de mémoire pour cette méthode : si une œuvre du plan est choisie, on reprend ses mesures.
+ if(!v&&String(rfCalc[g+'Art'])!=='')rfFill(g);
+}
+
+// Reprise des mesures depuis le plan (œuvre choisie, ou mur entier pour « espaces égaux »). Les champs restent modifiables.
+function rfFill(g){
+ const m=rfCalc[g+'Mode'],list=[...s.arts].sort((p,q)=>p.x-q.x),H=Number(s.wallH)||0;
+ const put=(x,y,z)=>{rfCalc[g+'1']=x;rfCalc[g+'2']=y;rfCalc[g+'3']=z};
+ const n=v=>fv(Math.max(0,v));
+ const top=o=>Number.isFinite(Number(o.top))?Number(o.top):0;
+ const hole=o=>H-o.y-top(o);
+ rfCalc.note='';
+ if(g==='w'&&m==='espaces'){
+  if(!list.length){rfCalc.note='Aucune œuvre sur ce mur.';return}
+  put(fv(s.wallW),list.map(o=>fv(o.w)).join(' + '),'');
+  rfCalc.note=list.length+(list.length>1?' œuvres reprises':' œuvre reprise')+' du mur ('+fv(s.wallW)+' cm de large).';
+  return;
+ }
+ const i=list.findIndex(o=>String(o.id)===String(rfCalc[g+'Art']));
+ if(i<0)return;
+ const o=list[i],next=list[i+1];
+ if(g==='h'){
+  if(m==='decalage'){
+   if(!next){put('','','');rfCalc.note='« '+o.name+' » est la dernière œuvre à droite : choisis-en une autre.';return}
+   put(n(hole(o)),n(hole(next)),'');
+   rfCalc.note='Trou de « '+o.name+' » → trou de « '+next.name+' », repris du plan.';return;
+  }
+  const t=top(o);
+  rfCalc.hAbove=t<0;
+  const t3=n(Math.abs(t));
+  if(m==='milieu')put(n(H-o.y-o.h/2),n(o.h),t3);
+  else if(m==='haut')put(n(H-o.y),'',t3);
+  else put(n(H-o.y-o.h),n(o.h),t3);
+  rfCalc.note='Mesures de « '+o.name+' » reprises du plan.';
+  return;
+ }
+ const xs=holeXs(o);
+ if(m==='entraxe'){
+  put(n(o.w),n(xs[0]-o.x),n(o.x+o.w-xs[xs.length-1]));
+  rfCalc.note='Mesures de « '+o.name+' » reprises du plan.';return;
+ }
+ if(!next){put('','','');rfCalc.note='« '+o.name+' » est la dernière œuvre à droite : choisis-en une autre.';return}
+ put(n(o.x+o.w-xs[xs.length-1]),n(next.x-(o.x+o.w)),n(holeXs(next)[0]-next.x));
+ rfCalc.note='De « '+o.name+' » à « '+next.name+' », repris du plan.';
+}
+
+function rfCalcInput(key,num,label,placeholder,keyboard){
+ return '<div class="calc-field"><label for="rf-'+key+'"><span class="calc-num">'+num+'</span>'+label+' (cm)</label><input id="rf-'+key+'" type="text" inputmode="'+(keyboard||'decimal')+'" autocomplete="off" spellcheck="false" data-calc-input="'+key+'" value="'+safeText(rfCalc[key])+'" placeholder="'+placeholder+'"></div>';
+}
+
+// Schéma : mêmes numéros ①②③ que les champs ; le résultat est en rouge.
+function rfSketch(g,m){
+ const B=(x,y,t,res)=>'<g class="sk-b'+(res?' res':'')+'"><circle cx="'+x+'" cy="'+y+'" r="8"/><text x="'+x+'" y="'+y+'">'+t+'</text></g>';
+ const V=(x,y1,y2,t,res)=>'<g class="'+(res?'sk-res':'sk-dim')+'"><line x1="'+x+'" y1="'+y1+'" x2="'+x+'" y2="'+y2+'"/><line x1="'+(x-4)+'" y1="'+y1+'" x2="'+(x+4)+'" y2="'+y1+'"/><line x1="'+(x-4)+'" y1="'+y2+'" x2="'+(x+4)+'" y2="'+y2+'"/></g>'+B(x,(y1+y2)/2,t,res);
+ const Hz=(y,x1,x2,t,res)=>'<g class="'+(res?'sk-res':'sk-dim')+'"><line x1="'+x1+'" y1="'+y+'" x2="'+x2+'" y2="'+y+'"/><line x1="'+x1+'" y1="'+(y-4)+'" x2="'+x1+'" y2="'+(y+4)+'"/><line x1="'+x2+'" y1="'+(y-4)+'" x2="'+x2+'" y2="'+(y+4)+'"/></g>'+B((x1+x2)/2,y,t,res);
+ const gd=(x1,y1,x2,y2)=>'<line class="sk-guide" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>';
+ const hole=(x,y)=>'<circle class="sk-hole" cx="'+x+'" cy="'+y+'" r="3.5"/>';
+ const rect=(c,x,y,w,h)=>'<rect class="'+c+'" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="2"/>';
+ const F=138,T=26,Bt=102,HY=48,C=64;          // sol, haut, bas, trou, milieu (schéma vertical)
+ let body='';
+ if(g==='h'){
+  body+='<line class="sk-floor" x1="20" y1="'+F+'" x2="280" y2="'+F+'"/>';
+  if(m==='decalage'){
+   body+=gd(60,100,110,100)+gd(110,100,155,100)+gd(155,44,200,44)+gd(200,44,250,44)+hole(110,100)+hole(200,44)+V(60,F,100,'1')+V(250,F,44,'2')+V(155,100,44,'=',true);
+  }else{
+   body+=rect('sk-art',125,T,90,Bt-T);
+   const refY=m==='milieu'?C:m==='haut'?T:Bt;
+   body+=gd(88,refY,125,refY)+gd(48,HY,170,HY);
+   if(m==='milieu')body+=gd(125,C,215,C);
+   body+=hole(170,HY)+V(48,F,HY,'=',true)+V(88,F,refY,'1');
+   if(m==='haut')body+=V(150,T,HY,'2');
+   else if(m==='milieu')body+=V(245,T,Bt,'2')+gd(215,T,245,T)+gd(215,Bt,245,Bt)+V(150,T,HY,'3');
+   else body+=V(245,T,Bt,'2')+gd(215,T,245,T)+gd(215,Bt,245,Bt)+V(150,T,HY,'3');
+  }
+ }else if(m==='trous'){
+  body+=rect('sk-art',10,22,110,68)+rect('sk-art',170,22,120,68)+hole(98,44)+hole(192,44)
+   +gd(120,90,120,108)+gd(170,90,170,108)+gd(98,44,98,134)+gd(192,44,192,134)
+   +Hz(108,98,120,'1')+Hz(108,120,170,'2')+Hz(108,170,192,'3')+Hz(134,98,192,'=',true);
+ }else if(m==='entraxe'){
+  body+=rect('sk-art',30,22,240,68)+hole(62,44)+hole(238,44)
+   +gd(62,44,62,108)+gd(238,44,238,108)+gd(30,90,30,134)+gd(270,90,270,134)
+   +Hz(108,30,62,'2')+Hz(108,238,270,'3')+Hz(134,30,270,'1')+Hz(66,62,238,'=',true);
+ }else{
+  body+=rect('sk-wall',10,16,280,88)+rect('sk-art',40,44,50,50)+rect('sk-art',120,44,70,50)+rect('sk-art',220,44,40,50)
+   +gd(10,104,10,128)+gd(290,104,290,128)
+   +Hz(30,40,90,'2')+Hz(30,120,190,'2')+Hz(30,220,260,'2')
+   +Hz(69,10,40,'=',true)+Hz(69,90,120,'=',true)+Hz(69,190,220,'=',true)+Hz(69,260,290,'=',true)
+   +Hz(128,10,290,'1');
+ }
+ return '<svg class="calc-sketch" viewBox="0 0 300 150" role="img" aria-label="Schéma des mesures à saisir">'+body+'</svg>';
+}
+
+// Bloc « Reprendre depuis le plan » : choix d'une œuvre (ou du mur entier pour les espaces égaux).
+function rfLinkBlock(g,m){
+ const list=[...s.arts].sort((p,q)=>p.x-q.x);
+ const note=rfCalc.note?'<div class="calc-note">'+safeText(rfCalc.note)+'</div>':'';
+ if(!list.length)return '<div class="calc-link"><div class="calc-note">Aucune œuvre sur ce mur : saisis les mesures à la main.</div></div>';
+ if(g==='w'&&m==='espaces')return '<div class="calc-link"><button class="btn" data-act="calcFill" data-which="w">↻ Reprendre le mur et ses '+list.length+(list.length>1?' œuvres':' œuvre')+'</button>'+note+'</div>';
+ const key=g+'Art',cur=list.some(o=>String(o.id)===String(rfCalc[key]))?String(rfCalc[key]):'';
+ const label=m==='decalage'?'Reprendre depuis le plan · œuvre de départ (comparée à la suivante)':m==='trous'?'Reprendre depuis le plan · œuvre de gauche (avec la suivante)':'Reprendre depuis le plan';
+ return '<div class="calc-link"><label for="rf-'+key+'">'+label+'</label><div class="calc-link-row"><select id="rf-'+key+'" data-calc-art="'+g+'"><option value="">Saisie libre</option>'+list.map(o=>'<option value="'+safeText(o.id)+'"'+(String(o.id)===cur?' selected':'')+'>'+safeText(o.name)+'</option>').join('')+'</select><button class="btn" data-act="calcFill" data-which="'+g+'" title="Recharger depuis le plan" aria-label="Recharger depuis le plan"'+(cur===''?' disabled':'')+'>↻</button></div>'+note+'</div>';
+}
+
+function rfCalcCard(g){
+ const m=rfCalc[g+'Mode'],def=RF_MODES[g][m];
+ const select='<div class="calc-field"><label for="rf-'+g+'Mode">Méthode</label><select id="rf-'+g+'Mode" data-calc-method="'+g+'">'+Object.entries(RF_MODES[g]).map(([v,d])=>'<option value="'+v+'"'+(m===v?' selected':'')+'>'+d.label+'</option>').join('')+'</select></div>';
+ const inputs=def.keys.map((k,i)=>rfCalcInput(g+k,i+1,def.fields[i][0],def.fields[i][1],def.fields[i][2])).join('');
+ const above=def.above?'<label class="calc-check"><input type="checkbox" data-calc-above'+(rfCalc.hAbove?' checked':'')+'> L’attache est <b>au-dessus</b> du bord haut de l’œuvre</label>':'';
+ return '<section class="calc-card">'+select+rfLinkBlock(g,m)+rfSketch(g,m)+inputs+above+
+ '<div class="calc-result" aria-live="polite"><small><span class="calc-num res">=</span>'+(g==='h'?'Résultat vertical':'Résultat horizontal')+'</small><div id="rf-'+g+'-result" class="calc-value">— cm</div><div id="rf-'+g+'-label" class="calc-label">Entre tes mesures.</div><div id="rf-'+g+'-sub" class="calc-substitution"></div></div>'+
+ '<details class="calc-formula-box"><summary>Voir la formule</summary><span class="calc-formula">'+def.formula+'</span><div class="calc-explain">'+def.explain+'</div></details>'+
+ '<div class="calc-actions"><button class="btn" data-act="clearCalc" data-which="'+g+'">↺ Effacer</button><button class="btn primary" data-act="copyCalc" data-which="'+g+'" id="rf-copy-'+g+'" disabled>Copier</button></div><div class="calc-copy-feedback" id="rf-feedback-'+g+'"></div></section>';
 }
 function rfCalcView(){
- const hm=rfCalc.hMode,wm=rfCalc.wMode;
- const hFormula={milieu:'H<sub>trou</sub> = H<sub>milieu</sub> + (H<sub>œuvre</sub> ÷ 2) − A',haut:'H<sub>trou</sub> = H<sub>haut</sub> − A',bas:'H<sub>trou</sub> = H<sub>bas</sub> + H<sub>œuvre</sub> − A',decalage:'ΔH = H<sub>2</sub> − H<sub>1</sub>'}[hm];
- const wFormula={trous:'D = A<sub>d1</sub> + E + A<sub>g2</sub>',entraxe:'E<sub>a</sub> = L − A<sub>g</sub> − A<sub>d</sub>',espaces:'E = (M − ΣL) ÷ (N + 1)'}[wm];
- return '<div class="calc-intro">Deux calculatrices indépendantes. Entre seulement tes cotes en <b>cm</b> : résultat et formule détaillée apparaissent automatiquement. Ces calculs ne déplacent pas les œuvres du plan.</div>'+ 
- '<section class="calc-card"><h2 class="calc-title">↕ 1. Hauteur <span class="calc-unit">cm</span></h2>'+ 
- '<div class="calc-field"><label for="rf-hMode">Choisir une méthode</label><select id="rf-hMode" data-calc-method="h">'+[
- ['milieu','Milieu de l’œuvre'],['haut','Haut de l’œuvre'],['bas','Bas de l’œuvre'],['decalage','Déplacement vertical · trou à trou']].map(([v,t])=>'<option value="'+v+'"'+(hm===v?' selected':'')+'>'+t+'</option>').join('')+'</select></div>'+ 
- rfCalcInput('h1',hm==='decalage'?'Hauteur du premier trou':hm==='milieu'?'Milieu depuis le sol':hm==='haut'?'Haut depuis le sol':'Bas depuis le sol',hm==='milieu'?'Ex. 155':hm==='bas'?'Ex. 100':'Ex. 180')+
- (hm==='haut'?'':rfCalcInput('h2',hm==='decalage'?'Hauteur du deuxième trou':'Hauteur de l’œuvre',hm==='decalage'?'Ex. 195':'Ex. 80'))+
- (hm==='decalage'?'':rfCalcInput('h3','Du haut de l’œuvre à l’attache','Ex. 5')+'<label class="calc-check"><input type="checkbox" data-calc-above'+(rfCalc.hAbove?' checked':'')+'> L’attache est <b>au-dessus</b> du bord haut de l’œuvre</label>')+
- '<div class="calc-result" aria-live="polite"><small>Résultat vertical</small><div id="rf-h-result" class="calc-value">— cm</div><div id="rf-h-label" class="calc-label">Entre tes mesures.</div></div>'+ 
- '<div class="calc-formula-box"><div class="calc-formula-heading">Formule utilisée</div><span class="calc-formula">'+hFormula+'</span><div id="rf-h-sub" class="calc-substitution"></div><div class="calc-explain">'+(hm==='decalage'?'Si le résultat est positif, tu montes ; s’il est négatif, tu descends.':'A = distance entre le haut de l’œuvre et l’axe de son attache.')+'</div></div>'+ 
- '<div class="calc-actions"><button class="btn" data-act="clearCalc" data-which="h">↺ Effacer</button><button class="btn primary" data-act="copyCalc" data-which="h" id="rf-copy-h" disabled>Copier</button></div><div class="calc-copy-feedback" id="rf-feedback-h"></div></section>'+ 
- '<section class="calc-card"><h2 class="calc-title">↔ 2. Largeur <span class="calc-unit">cm</span></h2>'+ 
- '<div class="calc-field"><label for="rf-wMode">Choisir une méthode</label><select id="rf-wMode" data-calc-method="w">'+[
- ['trous','De trou à trou entre deux œuvres'],['entraxe','Entraxe des attaches'],['espaces','Espaces égaux sur un mur']].map(([v,t])=>'<option value="'+v+'"'+(wm===v?' selected':'')+'>'+t+'</option>').join('')+'</select></div>'+ 
- rfCalcInput('w1',wm==='trous'?'Dernier trou → bord droit de l’œuvre 1':wm==='entraxe'?'Largeur de l’œuvre':'Largeur du mur',wm==='trous'?'Ex. 7':wm==='entraxe'?'Ex. 100':'Ex. 600')+
- rfCalcInput('w2',wm==='trous'?'Écart entre les deux œuvres':wm==='entraxe'?'Bord gauche → attache gauche':'Largeurs des œuvres (séparées par +)',wm==='trous'?'Ex. 15':wm==='entraxe'?'Ex. 5':'Ex. 80 + 100 + 60',wm==='espaces'?'text':'decimal')+
- (wm==='espaces'?'':rfCalcInput('w3',wm==='trous'?'Bord gauche œuvre 2 → premier trou':'Bord droit → attache droite','Ex. 5'))+
- '<div class="calc-result" aria-live="polite"><small>Résultat horizontal</small><div id="rf-w-result" class="calc-value">— cm</div><div id="rf-w-label" class="calc-label">Entre tes mesures.</div></div>'+ 
- '<div class="calc-formula-box"><div class="calc-formula-heading">Formule utilisée</div><span class="calc-formula">'+wFormula+'</span><div id="rf-w-sub" class="calc-substitution"></div><div class="calc-explain">'+(wm==='trous'?'Dernière attache → bord droit + écart entre cadres + bord gauche → première attache.':wm==='entraxe'?'Largeur de l’œuvre moins les deux retraits des attaches.':'M = largeur du mur ; ΣL = somme des largeurs des œuvres ; N = nombre d’œuvres.')+'</div></div>'+ 
- '<div class="calc-actions"><button class="btn" data-act="clearCalc" data-which="w">↺ Effacer</button><button class="btn primary" data-act="copyCalc" data-which="w" id="rf-copy-w" disabled>Copier</button></div><div class="calc-copy-feedback" id="rf-feedback-w"></div></section>';
+ const g=rfCalc.view==='w'?'w':'h';
+ return '<div class="calc-intro">Entre tes cotes en <b>cm</b> : le résultat s’affiche tout de suite. Choisis une œuvre du plan pour reprendre ses mesures. Rien de ce qui est calculé ici ne déplace les œuvres.</div>'+
+ '<div class="calc-seg" role="group" aria-label="Type de calcul"><button class="btn'+(g==='h'?' on':'')+'" data-act="calcView" data-id="h" aria-pressed="'+(g==='h')+'">↕ Hauteur</button><button class="btn'+(g==='w'?' on':'')+'" data-act="calcView" data-id="w" aria-pressed="'+(g==='w')+'">↔ Largeur</button></div>'+
+ rfCalcCard(g);
+}
+
+// Enregistrement local : les saisies survivent à un rechargement ou à une fermeture de l'appli.
+function rfCalcSnapshot(){
+ const {view,hMode,hAbove,h1,h2,h3,hArt,wMode,w1,w2,w3,wArt,mem}=rfCalc;
+ return {view,hMode,hAbove,h1,h2,h3,hArt,wMode,w1,w2,w3,wArt,mem:JSON.parse(JSON.stringify(mem))};
+}
+function rfCalcRestore(c){
+ if(!c||typeof c!=='object')return;
+ const str=(v,max)=>typeof v==='string'?v.slice(0,max):'';
+ if(c.view==='h'||c.view==='w')rfCalc.view=c.view;
+ if(RF_HM.includes(c.hMode))rfCalc.hMode=c.hMode;
+ if(RF_WM.includes(c.wMode))rfCalc.wMode=c.wMode;
+ rfCalc.hAbove=c.hAbove===true;
+ for(const k of ['h1','h2','h3','w1','w2','w3'])rfCalc[k]=str(c[k],k==='h2'||k==='w2'?300:40);
+ rfCalc.hArt=str(c.hArt,20);rfCalc.wArt=str(c.wArt,20);rfCalc.mem={};rfCalc.note='';
+ if(c.mem&&typeof c.mem==='object'){
+  for(const key of Object.keys(c.mem)){
+   const [g,m]=String(key).split(':'),v=c.mem[key];
+   if(!((g==='h'&&RF_HM.includes(m))||(g==='w'&&RF_WM.includes(m)))||!v||typeof v!=='object')continue;
+   rfCalc.mem[g+':'+m]={1:str(v[1],300),2:str(v[2],300),3:str(v[3],300),above:v.above===true};
+  }
+ }
 }
 function rfCalcUpdate(){
  if(s.tab!=='calc')return;
@@ -1390,10 +1575,13 @@ function measureAction(act){
 function draw(){root.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('sel',b.dataset.tab===s.tab));out.innerHTML=s.tab==='plan'?plan():s.tab==='works'?works():s.tab==='attach'?attach():s.tab==='calc'?rfCalcView():drill();if(s.tab==='plan'){bindDrag();bindMeasure()}if(s.tab==='calc')rfCalcUpdate();pwaSave()}
 function bindDrag(){const wall=out.querySelector('#axg-wall');if(!wall)return;wall.querySelectorAll('.work').forEach(el=>el.addEventListener('pointerdown',ev=>{const a=s.arts.find(o=>o.id===Number(el.dataset.art));s.selected=a.id;const rect=wall.getBoundingClientRect(),startX=ev.clientX,startY=ev.clientY,origX=a.x,origY=a.y;el.setPointerCapture(ev.pointerId);el.addEventListener('pointermove',move);el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);function move(e){a.x=Math.max(0,Math.min(s.wallW-a.w,Math.round((origX+(e.clientX-startX)/rect.width*s.wallW)*2)/2));a.y=Math.max(0,Math.min(s.wallH-a.h,Math.round((origY+(e.clientY-startY)/rect.height*s.wallH)*2)/2));el.style.left=`${a.x/s.wallW*100}%`;el.style.top=`${a.y/s.wallH*100}%`}function end(){el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',end);el.removeEventListener('pointercancel',end);draw()}ev.preventDefault()}))}
 root.addEventListener('click',e=>{const tab=e.target.closest('[data-tab]');if(tab){s.tab=tab.dataset.tab;projectMsg='';if(s.tab!=='drill')s.siteMode=false;draw();return}const b=e.target.closest('button[data-act]');if(!b)return;const act=b.dataset.act;
+if(act==='calcView'){rfCalc.view=b.dataset.id==='w'?'w':'h';rfCalc.note='';draw();return}
+if(act==='calcFill'){const w=b.dataset.which;if(w!=='h'&&w!=='w')return;rfFill(w);draw();return}
 if(act==='clearCalc'){
  const w=b.dataset.which;if(w!=='h'&&w!=='w')return;
  for(const k of ['1','2','3'])rfCalc[w+k]='';
  if(w==='h')rfCalc.hAbove=false;
+ rfCalc[w+'Art']='';rfCalc.note='';delete rfCalc.mem[w+':'+rfCalc[w+'Mode']];
  draw();return;
 }
 if(act==='copyCalc'){
@@ -1437,12 +1625,17 @@ if(act==='saveGap'){
 }
 if(['plan','works','attach','drill'].includes(act)){s.tab=act;s.siteMode=false;draw();return}if(act==='toggleCenter'){s.centerOpen=!s.centerOpen;draw();return}if(act==='toggleBottom'){s.bottomOpen=!s.bottomOpen;draw();return}if(act==='applyBottom'){const input=out.querySelector('[data-bottom-height]');const raw=input?.value?.trim()||'';const n=Number(raw);const scope=out.querySelector('input[name="bottomScope"]:checked')?.value||s.bottomScope;if(!raw||!Number.isFinite(n)||n<0||n>s.wallH){alert('Indique une hauteur comprise entre 0 et '+f(s.wallH)+' cm.');return}const aa=scope==='all'?s.arts:[art()].filter(Boolean);if(!aa.length){alert('Aucune œuvre sélectionnée.');return}const impossible=aa.filter(a=>n+a.h>s.wallH+0.00001);if(impossible.length){alert('Hauteur impossible pour '+impossible.map(a=>a.name).join(', ')+' : les œuvres doivent rester dans le mur.');return}s.bottomHeight=n;s.bottomScope=scope;for(const a of aa)a.y=s.wallH-n-a.h;draw();return}if(act==='applyCenter'){const input=out.querySelector('[data-center-height]');const raw=input?.value?.trim()||'';const n=Number(raw);const scope=out.querySelector('input[name="centerScope"]:checked')?.value||s.centerScope;if(!raw||!Number.isFinite(n)||n<0||n>s.wallH){alert('Indique une hauteur comprise entre 0 et '+f(s.wallH)+' cm.');return}const aa=scope==='all'?s.arts:[art()].filter(Boolean);if(!aa.length){alert('Aucune œuvre sélectionnée.');return}const impossible=aa.filter(a=>n<a.h/2-0.00001||n>s.wallH-a.h/2+0.00001);if(impossible.length){alert('Hauteur impossible pour '+impossible.map(a=>a.name).join(', ')+' : les œuvres doivent rester dans le mur.');return}s.centerHeight=n;s.centerScope=scope;for(const a of aa)a.y=s.wallH-n-a.h/2;draw();return}if(act==='toggleGap'){s.gapOpen=!s.gapOpen;draw();return}if(act==='toggleHeight'){s.heightOpen=!s.heightOpen;draw();return}if(act==='select'){s.selected=Number(b.dataset.id);s.deleteId=null;draw();return}if(act==='askDelete'){s.deleteId=Number(b.dataset.id);draw();return}if(act==='cancelDelete'){s.deleteId=null;draw();return}if(act==='confirmDelete'){const id=Number(b.dataset.id);if(id!==s.deleteId)return;s.arts=s.arts.filter(a=>a.id!==id);if(s.selected===id)s.selected=s.arts[0]?.id??null;s.deleteId=null;draw();return}if(act==='add'){const id=Math.max(0,...s.arts.map(a=>a.id))+1;s.arts.push({id,name:'Œuvre '+id,w:50,h:75,x:Math.max(0,Math.min(40*id,s.wallW-50)),y:90,edge:10,top:8,points:2});s.selected=id;s.tab='works';s.deleteId=null;draw();return}if(act==='equal'){if(!s.arts.length){alert('Ajoute d’abord une œuvre sur ce mur depuis l’onglet Œuvres.');return}const aa=[...s.arts].sort((a,b)=>a.x-b.x),total=aa.reduce((v,a)=>v+a.w,0);if(total>=s.wallW){alert('Le total des largeurs dépasse le mur.');return}const gap=(s.wallW-total)/(aa.length+1);let x=gap;for(const a of aa){a.x=x;x+=a.w+gap}draw();return}if(act==='applyGap'){const input=out.querySelector('[data-key="desiredGap"]'),n=Number(input?.value);if(!input||input.value.trim()===''||!Number.isFinite(n)||n<0){alert('Indique un écart positif ou nul.');return}s.desiredGap=n;applyGap(n);draw();return}if(act==='presetGap'){const n=Number(b.dataset.id);s.desiredGap=n;applyGap(n);draw();return}if(['center','top','bottom'].includes(act)){const a=art();if(!a)return;const ref=act==='center'?a.y+a.h/2:act==='top'?a.y:a.y+a.h;for(const v of s.arts){v.y=Math.max(0,Math.min(s.wallH-v.h,act==='center'?ref-v.h/2:act==='top'?ref:ref-v.h))}draw();return}if(act==='removePhoto'){const a=s.arts.find(z=>z.id===Number(b.dataset.id));if(a){delete a.photo;draw()}return}if(act==='points'){const a=art();if(a){const raw=b.dataset.id;a.points=raw==='rail'?'rail':Number(raw);if(a.points===4&&a.bottomOffset===undefined)a.bottomOffset=''}draw()}});
 root.addEventListener('keydown',e=>{if(e.target?.id!=='gap-direct-input')return;if(e.key==='Enter'){e.preventDefault();out.querySelector('[data-act=saveGap]')?.click();}else if(e.key==='Escape'){e.preventDefault();out.querySelector('[data-act=cancelGap]')?.click();}});
-root.addEventListener('input',e=>{const input=e.target.closest('input[data-calc-input]');if(!input||s.tab!=='calc')return;const key=input.dataset.calcInput;if(Object.prototype.hasOwnProperty.call(rfCalc,key)){rfCalc[key]=input.value;rfCalcUpdate();}});
+root.addEventListener('input',e=>{const input=e.target.closest('input[data-calc-input]');if(!input||s.tab!=='calc')return;const key=input.dataset.calcInput;if(/^[hw][123]$/.test(key)){rfCalc[key]=input.value;rfCalcUpdate();pwaSave();}});
 root.addEventListener('input',e=>{const input=e.target.closest('input[data-key]');if(!input||s.tab!=='attach')return;const key=input.dataset.key;if(key!=='top'&&key!=='edge'&&key!=='bottomOffset')return;const raw=input.value.trim();const a=art();if(!a)return;if(key==='bottomOffset'&&raw===''){a.bottomOffset='';const svg=out.querySelector('#attach-schema');if(svg)svg.innerHTML=attachSchema(a);pwaSave();return}const n=Number(raw);if(raw===''||!Number.isFinite(n)||n<0)return;a[key]=key==='top'&&a.top<0?-n:n;const svg=out.querySelector('#attach-schema');if(svg)svg.innerHTML=attachSchema(a);pwaSave()});
 root.addEventListener('change',e=>{if(handleExtraChange(e))return;if(e.target?.matches('[data-calc-method]')){
  const group=e.target.dataset.calcMethod;
- if(group==='h'){rfCalc.hMode=e.target.value;rfCalc.h1=rfCalc.h2=rfCalc.h3='';}
- else if(group==='w'){rfCalc.wMode=e.target.value;rfCalc.w1=rfCalc.w2=rfCalc.w3='';}
+ if((group==='h'&&RF_HM.includes(e.target.value))||(group==='w'&&RF_WM.includes(e.target.value))){
+  rfStash(group);rfCalc[group+'Mode']=e.target.value;rfRecall(group);
+ }
+ draw();return;
+ }if(e.target?.matches('[data-calc-art]')){
+ const group=e.target.dataset.calcArt;
+ if(group==='h'||group==='w'){rfCalc[group+'Art']=e.target.value;rfFill(group)}
  draw();return;
  }if(e.target?.id==='wall-choice'){chooseWall(e.target.value);return;}const ai=s.importedPlan?.analysis;if(ai&&Array.isArray(ai.candidates)){
  const ck=e.target.closest('input[data-candidate-check]');if(ck){const c=ai.candidates[Number(ck.dataset.candidateCheck)];if(c){c.checked=ck.checked;recognitionError='';pwaSave();}return;}
