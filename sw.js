@@ -1,41 +1,46 @@
-const CACHE = "ridfou-expo-2026-11-08-v3";
-const HOME = new URL("./index.html", self.registration.scope).href;
+// Ridfou Expo — service worker.
+// Rôle : faire fonctionner l'application hors ligne (sur un chantier, sans réseau), et récupérer
+// la nouvelle version de index.html dès qu'on est en ligne.
+// Quand tu publies une nouvelle version de l'application, incrémente simplement CACHE ci-dessous.
+const CACHE = 'ridfou-expo-v1';
+const SHELL = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon.png', './icon-192.png', './icon-512.png'];
 
-self.addEventListener("install", event => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE);
-    try {
-      await cache.add(new Request(HOME, {cache: "reload"}));
-    } catch (e) {}
-    await self.skipWaiting();
-  })());
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 
-self.addEventListener("activate", event => {
-  event.waitUntil(self.clients.claim());
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k.startsWith('ridfou-expo-') && k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
 });
 
-self.addEventListener("fetch", event => {
+self.addEventListener('fetch', event => {
   const request = event.request;
-  if (request.method !== "GET") return;
+  if (request.method !== 'GET') return;
   const url = new URL(request.url);
-  const scope = new URL(self.registration.scope);
-  if (url.origin !== scope.origin || !url.pathname.startsWith(scope.pathname)) return;
+  if (url.origin !== location.origin) return;
 
-  event.respondWith((async () => {
-    try {
-      const response = await fetch(request, {cache: "no-store"});
-      if (response.ok) {
-        const cache = await caches.open(CACHE);
-        await cache.put(request, response.clone());
-        if (request.mode === "navigate") await cache.put(HOME, response.clone());
-      }
+  // Page : réseau d'abord (version à jour), copie en cache pour le hors-ligne.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          if (response.ok) { const copy = response.clone(); caches.open(CACHE).then(c => c.put('./index.html', copy)); }
+          return response;
+        })
+        .catch(() => caches.match('./index.html').then(hit => hit || caches.match('./')))
+    );
+    return;
+  }
+
+  // Autres fichiers (icônes, manifeste) : cache d'abord, puis réseau.
+  event.respondWith(
+    caches.match(request).then(hit => hit || fetch(request).then(response => {
+      if (response.ok) { const copy = response.clone(); caches.open(CACHE).then(c => c.put(request, copy)); }
       return response;
-    } catch (e) {
-      const cache = await caches.open(CACHE);
-      return (await cache.match(request, {ignoreSearch: true}))
-        || (request.mode === "navigate" ? await cache.match(HOME) : undefined)
-        || Response.error();
-    }
-  })());
+    }))
+  );
 });
